@@ -14,4 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 df_three <- read.table("./data-three_years.txt")
 df_five <- read.table("./data-five_years.txt")
+df_three$V1 = as.Date(df_three$V1)
+df_five$V1 = as.Date(df_five$V1)
+head(df_three)
+head(df_five)
+x.ts.3 = ts(df_three$V2)
+x.ts.5 = ts(df_five$V2)
+plot(x.ts.3)
+plot(x.ts.5)
 ```
