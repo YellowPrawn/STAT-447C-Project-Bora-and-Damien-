@@ -1,25 +1,61 @@
 ---
-title: "447_Project"
-output: html_document
+title: "STAT 447C Project: Bora Guney and Damien Fung"
+output:
+  pdf_document: default
+  html_document: default
 date: "2024-04-09"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 # Data Preparation
-
-```{r}
 df_three <- read.table("./data-three_years.txt")
 df_five <- read.table("./data-five_years.txt")
 df_three$V1 = as.Date(df_three$V1)
 df_five$V1 = as.Date(df_five$V1)
-head(df_three)
-head(df_five)
-x.ts.3 = ts(df_three$V2)
-x.ts.5 = ts(df_five$V2)
-plot(x.ts.3)
-plot(x.ts.5)
+
+# TODO: create monthly average
+
+x.ts.3 = ts(df_three$V2, start = c(2021, 4), freq = 365)
+x.ts.5 = ts(df_five$V2, start = c(2019, 4), freq = 365)
 ```
+
+# Introduction
+
+Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using ARIMA. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years.
+
+We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ a hierarchical model where we treat the 5 year data set as side data to inform our prior choices.
+
+By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+
+
+# Preliminary EDA and Data Preparation
+
+To simplify the frequentist (ARIMA) model creation, we take the monthly average of both the 3 year and the 5 year data sets instead of the daily value of the S&P 500.
+
+```{r 3-year-plot, echo = FALSE}
+print("S&P 500 Index data over 3 years")
+head(df_three)
+plot(x.ts.3, ylab = "S&P 500 Index", main = "S&P 500 Index over 3 years")
+```
+
+
+```{r 5-year-plot, echo = FALSE}
+print("S&P 500 Index data over 5 years")
+head(df_five)
+plot(x.ts.5, ylab = "S&P 500 Index", main = "S&P 500 Index over 5 years")
+```
+
+The time series plots shown for both 3 year and 5 year data sets demonstrate that the data is not stationary (mean is not constant), and some seasonality may be observed. As such, we remove seasonal variation from both datasets.
+
+```{r, echo = FALSE}
+x.ts.3.stl <- stl(x.ts.3, s.window = "periodic")
+x.ts.3.ds <- x.ts.3 - x.ts.3.stl$time.series[,"seasonal"]
+
+x.ts.5.stl <- stl(x.ts.5, s.window = "periodic")
+x.ts.5.ds <- x.ts.5 - x.ts.5.stl$time.series[,"seasonal"]
+
+plot(x.ts.3.ds)
+plot(x.ts.5.ds)
+```
+
