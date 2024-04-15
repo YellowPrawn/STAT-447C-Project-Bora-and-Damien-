@@ -110,7 +110,7 @@ After the application of differencing on both time series, they may be considere
 
 Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 251$. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC
 
-```{r}
+```{r, echo = FALSE}
 out.aic <-matrix(nrow=4, ncol=4)
 for(p in 0:3) {for(q in 0:3){
 fm <- arima(x.ts.5.train, order=c(p,1,q), seasonal=list(order=c(0,1,1)),include.mean = FALSE)
@@ -178,7 +178,7 @@ generated quantities {
 We use the data from April $2021$ to December $2023$ for training. Further, the data
 from January $2023$ to April $2024$ will be used for testing.
 
-```{r}
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
 suppressMessages(require(rstan))
 train = x.ts.3.train
 
@@ -197,13 +197,13 @@ fit = sampling(
 
 ```
 
-```{r}
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
 samples = extract(fit)
 fit
 yhats = colMeans(samples$yhat)
 ```
 
-```{r}
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
 preds.ts = ts(yhats, start = c(2024, 4), end = c(2024,5), frequency = 251)
 plot(preds.ts, main = "Predictions vs Time")
 ```
