@@ -175,8 +175,8 @@ generated quantities {
 ```
 
 
-We use the data from April $2021$ to December $2023$ for training. Further, the data
-from January $2023$ to April $2024$ will be used for testing.
+We use the data from April $2021$ to April $4$th $2024$ for training. Further, 
+the data from April $5$th and $8$th$2024$ will be used for testing.
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 suppressMessages(require(rstan))
@@ -211,7 +211,7 @@ cı.yhat2 = quantile(samples$yhat[,2], c(0.025, 0.975))
 preds.ts = ts(yhats, start = as.Date("2024-4-5"), end = as.Date("2024-4-8"))
 dates = c(as.Date("2024-4-5"), as.Date("2024-4-8"))
 plot(x = dates, y = c(preds.ts[1], preds.ts[2]), main = "Predictions vs Time", 
-     type = "o", ylim = c(5010, 5280), col = "purple")
+     type = "o", ylim = c(5010, 5280), col = "purple", ylab = "Index Value")
 lines(x = dates, y = c(x.ts.test[1], x.ts.test[2]), type = "o")
 lines(x = dates, y = c(cı.yhat1[1], cı.yhat2[1]), type = "o", col = "purple", lty = 2)
 lines(x = dates, y = c(cı.yhat1[2], cı.yhat2[2]), type = "o", col = "purple", lty = 2)
