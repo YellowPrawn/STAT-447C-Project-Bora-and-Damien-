@@ -367,11 +367,6 @@ output = suppressWarnings(mcmc(log_joint, c(1,1, 1), c(200, 700), x.ts.5.train, 
 
 
 ```{r}
-output
-```
-
-
-```{r}
 hist(output$change_point_trace1[output$change_point_trace1 != -1])
 hist(output$change_point_trace2[output$change_point_trace2 != -1])
 output$last_iteration_alphas
