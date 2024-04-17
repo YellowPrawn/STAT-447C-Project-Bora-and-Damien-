@@ -228,7 +228,7 @@ legend("topleft", legend = c("Predictions","Actual Values", "Predictions Interva
 Now, we will use the five year data, and will try to find 
 the change points within the data. From the time series plot of the five year data, 
 it seems that there are multiple change point candidates, one of them being around 
-COVID times. We assume that there are two change points, and therefore three 
+COVID times. We assume that there are four change points, and therefore five 
 $\alpha$ values corresponding the divided regions. Furher, we assume that 
 each region has the same standard deviation for simplicity. 
 To find the change point we use the following alternation of Kernels model :
@@ -239,11 +239,13 @@ $K_3$ only modifies the change points. We know that if $K_1$, $K_2$, and $K_3$
 are $\pi$-invariant, then $K$ is too. For this particular target distribution, we can 
 say that $K_1$ is irreducible if the proposal for $K_1$ can reach all of $R_{+}$
 from any starting point. Further, $K_2$ is irreducible if the the proposal for 
-$K_2$ can reach all of $R_{+}^3$ from any starting point. Lastly, $K_3$ is irreducible
-if the proposal for $K_3$ can reach all of $\{1,2,..., 627\} \times \{628, 629,..., 1255\}$ 
+$K_2$ can reach all of $R_{+}^5$ from any starting point. Lastly, $K_3$ is irreducible
+if the proposal for $K_3$ can reach all of 
+$$\{1,2,..., 313\} \times \{314, 315,..., 626\} \times \{627, 628, ..., 939\} \times \{940, 941, ..., 1255\} $$
 from any starting point. For the sigma, we use a normal distribution centered at
 the current $\sigma$:
-$$\sigma \sim N()$$
+$$\sigma' \sim N(\sigma, 5)$$
+
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
 
@@ -324,9 +326,9 @@ return(current_point)
 kernel3 = function(gamma, sigma, alphas, current_point, y) {
 dim = length(current_point)
 proposal1 = sample(1:floor(length(y)/4) , size = 1)
-proposal2 = sample(seq(floor(length(x.ts.5.train)/4) + 1, 2*floor(length(x.ts.5.train)/4)), size = 1)
-proposal3 = sample(seq(2*floor(length(x.ts.5.train)/4) + 1, 3*floor(length(x.ts.5.train)/4)), size = 1)
-proposal4 = sample(seq(floor(3*length(x.ts.5.train)/4) + 1, 4*floor(length(x.ts.5.train)/4)), size = 1)
+proposal2 = sample(seq(floor(length(y)/4) + 1, 2*floor(length(y)/4)), size = 1)
+proposal3 = sample(seq(2*floor(length(y)/4) + 1, 3*floor(length(y)/4)), size = 1)
+proposal4 = sample(seq(3*floor(length(y)/4) + 1, length(y)), size = 1)
 proposal = c(proposal1, proposal2, proposal3, proposal4)
 ratio = exp(gamma(sigma, alphas, proposal, y) - gamma(sigma, alphas, current_point, y))
 if (runif(1) < ratio & ratio != Inf) {
