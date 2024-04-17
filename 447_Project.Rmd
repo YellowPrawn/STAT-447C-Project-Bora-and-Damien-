@@ -37,8 +37,6 @@ df <- data.frame(V1=ts)
 df_five <- full_join(df,df_five) %>%
   fill(V2)
 
-
-
 x.ts.3 = ts(df_three$V2, 
             start = c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
             freq = 365)
@@ -129,7 +127,7 @@ After the application of differencing on both time series, they may be considere
 =======
 ## SARIMA Model
 
-Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 365$. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC using a simple grid search. 
+Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 365$ would be appropriate; but due to the limitations of the `stats` package in `R`, we are unable to use a period of $s = 365$ for our model as its max period is $s=350$; instead, we adopt $s=182$ to represent biannual fluctuations instead. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC using a simple grid search. 
 
 As a result of the heavy computations needed to generate each SARIMA model, we omit the results from this knit pdf. However, we conclude that $p = 0, q = 0$ are the most appropriate values for the SARIMA model as the decreases in the model's AIC are minimal (in the order of magnitude of $10^{-1}$ unit decrements). Therefore, we choose the simplest model through parsimony; we display the SARIMA models for both datasets in the below code cells. 
 
@@ -147,22 +145,20 @@ As a result of the heavy computations needed to generate each SARIMA model, we o
 ```
 
 ```{r}
-sarima.model.3 <- arima(x.ts.3.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 91),include.mean = FALSE) # use period of 91 to represent a quarter fluctuation
+sarima.model.3 <- arima(x.ts.3.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 182),include.mean = FALSE) # use period of 91 to represent a biannual fluctuation.
 sarima.model.3
-AIC(sarima.model.3)
 
-sarima.model.5 <- arima(x.ts.5.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 91),include.mean = FALSE) # use period of 91 to represent a quarterly fluctuations
+sarima.model.5 <- arima(x.ts.5.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 182),include.mean = FALSE) # use period of 182 to represent a biannual fluctuations
 sarima.model.5
-AIC(sarima.model.5)
 ```
 
 ```{r, echo = FALSE}
-sarima.3.preds <- predict(sarima.model.3, n.ahead = 30, prediction.interval = TRUE)
-sarima.5.preds <- predict(sarima.model.5, n.ahead = 30, prediction.interval = TRUE)
+sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TRUE)
+sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
 ```
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
-plot(x.ts.test, ylab = "S&P 500 Index", col = "#000000")
+plot(x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000))
 lines(sarima.3.preds$pred, col = "#FF0000")
 lines(sarima.3.preds$pred - qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed")
 lines(sarima.3.preds$pred + qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed")
@@ -231,8 +227,8 @@ generated quantities {
 ```
 
 
-We use the data from April $2021$ to March $2024$ for training. Further, 
-the data from April $2024$ will be used for testing.
+We use the data from April $2021$ to Feburary $2024$ for training. Further, 
+the data from March $2024$ to April $2024$ will be used for testing.
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 suppressMessages(require(rstan))
