@@ -225,21 +225,22 @@ legend("topleft", legend = c("Predictions","Actual Values", "Predictions Interva
 
 
 
-Now, we will use the five year data that includes point, and will try to find 
-the change point. From the time series plot of the five year data, it seems that 
+Now, we will use the five year data that, and will try to find 
+the change points within the data. From the time series plot of the five year data, it seems that 
 the change point occurs around COVID times. To find the change point we use the
 following model :
 
 ```{r}
 set.seed(1)
 
-log_joint = function(alphas, change_point, y) {
+log_joint = function(sigma, alphas, change_point, y) {
   
   # Return log(0.0) if parameters are outside of the support
-  if (alphas[[1]] < 0 | alphas[[2]] < 0 | alphas[3] < 0) 
+  if (sigma < 0 | alphas[[1]] < 0 | alphas[[2]] < 0 | alphas[3] < 0) 
     return(-Inf)
   
   log_prior = 
+    dexp(sigma, 1/100) +
     dnorm(alphas[[1]], 1, 0.001, log = TRUE) +
     dnorm(alphas[[2]], 1, 0.001, log = TRUE) +
     dnorm(alphas[[3]], 1, 0.001, log = TRUE)
@@ -255,9 +256,9 @@ log_joint = function(alphas, change_point, y) {
       alpha = alphas[3]
     }
     if (i == 1){
-      log_likelihood = log_likelihood + dnorm(y[[i]], alpha*y[[i]], 45.46, log = TRUE)
+      log_likelihood = log_likelihood + dnorm(y[[i]], alpha*y[[i]], sigma, log = TRUE)
     } else{
-      log_likelihood = log_likelihood + dnorm(y[[i]], alpha*y[[i-1]], 45.46, log = TRUE)
+      log_likelihood = log_likelihood + dnorm(y[[i]], alpha*y[[i-1]], sigma, log = TRUE)
       
     }
   }
@@ -266,7 +267,7 @@ log_joint = function(alphas, change_point, y) {
 }
 ```
 
-Then we specify three kernels, one for $\sigma$, $\alpha$, and change point.
+Then we specify three kernels, one for  $\alpha$ and change point.
 
 ```{r}
 kernel1 = function(gamma, current_point, alphas, proposal_sd, change.p, y) {
@@ -285,10 +286,10 @@ return(current_point)
 
 
 ```{r}
-kernel2 = function(gamma, current_point, proposal_sd, change.p, y) {
+kernel2 = function(gamma, sigma, current_point, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
-ratio = gamma(proposal, change.p,y) / gamma(current_point, change.p, y)
+ratio = gamma(sigma, proposal, change.p,y) / gamma(sigma, current_point, change.p, y)
 if (runif(1) < ratio & ratio != Inf) {
 return(proposal)
 } else {
@@ -300,12 +301,12 @@ return(current_point)
 
 
 ```{r}
-kernel3 = function(gamma, alphas, current_point, y) {
+kernel3 = function(gamma, sigma, alphas, current_point, y) {
 dim = length(current_point)
-proposal1 = sample(1:(length(y)/2), size = 1)
+proposal1 = sample(1:(length(y)/2 - 1), size = 1)
 proposal2 = sample((length(y)/2) : length(y), size = 1)
 proposal = c(proposal1, proposal2)
-ratio = gamma(alphas, proposal, y) / gamma(alphas, current_point, y)
+ratio = gamma(sigma, alphas, proposal, y) / gamma(sigma, alphas, current_point, y)
 if (runif(1) < ratio & ratio != Inf) {
 return(proposal)
 } else {
@@ -329,19 +330,25 @@ rho_helper = function(){
   }
     
     }
-mcmc = function(gamma, alphas, change_point, y, n_iterations){
+mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
   change_point_trace1 = rep(-1, n_iterations)
   change_point_trace2 = rep(-1, n_iterations)
   for (i in 1:n_iterations) {
-    rho = rbinom(1,1,1/2) # choose kernel
-    if(rho == 0){
-      alphas =  kernel2(log_joint, alphas, 0.001, change_point, y)
+    rho = rho_helper() # choose kernel
+    
+    if (rho == 1){
+      sigma = kernel1(log_joint, sigma, alphas, 10, change_point, y)
+      change_point_trace1[i] = change_point[1]
+      change_point_trace2[i] = change_point[2]
+    }
+    else if(rho == 2){
+      alphas =  kernel2(log_joint, sigma, alphas, 0.001, change_point, y)
       change_point_trace1[i] = change_point[1]
       change_point_trace2[i] = change_point[2]
       
 } 
     else{
-      change_point = kernel3(log_joint, alphas, change_point, y)
+      change_point = kernel3(log_joint, sigma, alphas, change_point, y)
        change_point_trace1[i] = change_point[1]
       change_point_trace2[i] = change_point[2]
       
@@ -362,7 +369,7 @@ mcmc = function(gamma, alphas, change_point, y, n_iterations){
 
 
 ```{r}
-output = suppressWarnings(mcmc(log_joint, c(1,1, 1), c(200, 700), x.ts.5.train, 10000))
+output = suppressWarnings(mcmc(log_joint, 45, c(1,1, 1), c(200, 700), x.ts.5.train, 10000))
 ```
 
 
