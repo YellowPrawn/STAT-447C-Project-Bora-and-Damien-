@@ -240,7 +240,7 @@ log_joint = function(sigma, alphas, change_point, y) {
     return(-Inf)
   
   log_prior = 
-    dexp(sigma, 1/100) +
+    dexp(sigma, 1/100, log = TRUE) +
     dnorm(alphas[[1]], 1, 0.001, log = TRUE) +
     dnorm(alphas[[2]], 1, 0.001, log = TRUE) +
     dnorm(alphas[[3]], 1, 0.001, log = TRUE)
@@ -281,7 +281,6 @@ return(current_point)
 }
 }
 ```
-
 
 
 
@@ -359,6 +358,7 @@ mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
     list(
       change_point_trace1 = change_point_trace1,
        change_point_trace2 = change_point_trace2,
+      last_iteration_sigma = sigma,
       last_iteration_alphas = alphas
     )
   )
@@ -369,7 +369,7 @@ mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
 
 
 ```{r}
-output = suppressWarnings(mcmc(log_joint, 45, c(1,1, 1), c(200, 700), x.ts.5.train, 10000))
+output = suppressWarnings(mcmc(log_joint, 45, c(1,1, 1), c(200, 700), x.ts.5.train, 20000))
 ```
 
 
