@@ -24,27 +24,46 @@ df_five <- read.table("./data-five_years.txt")
 df_three$V1 = as.Date(df_three$V1)
 df_five$V1 = as.Date(df_five$V1)
 
-#df_three <- df_three %>%
-#  group_by(year = year(df_three$V1), month = month(df_three$V1)) %>%
-#  summarize(monthly_index = mean(V2))
+# fill in missing days which are not included
+ts <- seq.POSIXt(as.POSIXlt("2021-04-08"), as.POSIXlt("2024-04-08"), by="day")
+ts <- as.Date(format.POSIXct(ts,'%Y-%m-%d'))
+df <- data.frame(V1=ts)
+df_three <- full_join(df,df_three) %>%
+  fill(V2)
 
-#df_five <- df_five %>%
-#  group_by(year = year(df_five$V1), month = month(df_five$V1)) %>%
-#  summarize(monthly_index = mean(V2))
+ts <- seq.POSIXt(as.POSIXlt("2019-04-08"), as.POSIXlt("2024-04-08"), by="day")
+ts <- as.Date(format.POSIXct(ts,'%Y-%m-%d'))
+df <- data.frame(V1=ts)
+df_five <- full_join(df,df_five) %>%
+  fill(V2)
 
-x.ts.3 = ts(df_three$V2, start = c(2021, 4), freq = 251)
-x.ts.5 = ts(df_five$V2, start = c(2019, 4), freq = 251)
+x.ts.3 = ts(df_three$V2, 
+            start = c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
+            freq = 365)
+x.ts.5 = ts(df_five$V2, 
+            start = c(2019, as.numeric(format(as.Date("2019-04-08"), "%j"))), 
+            freq = 365)
 
-x.ts.3.train = window(x.ts.3, start=c(2021,4), end=c(2024,3), frequency = 251)
-x.ts.5.train = window(x.ts.5, start=c(2019,4), end=c(2024,3), frequency = 251)
+x.ts.3.train = window(x.ts.3, 
+                      start=c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
+                      end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
+                      frequency = 365)
 
-# we use the same one for both time series since the data is identical
-x.ts.test = window(x.ts.3, start=c(2024,4), end=c(2024,5), frequency = 251)
+x.ts.5.train = window(x.ts.5, 
+                      start=c(2019, as.numeric(format(as.Date("2019-04-08"), "%j"))), 
+                      end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
+                      frequency = 365)
+
+
+x.ts.test = window(x.ts.3, 
+                   start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
+                   end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
+                   frequency = 365)
 ```
 
 # Introduction
 
-Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ a hierarchical model where we treat the 5 year data set as side data to inform our prior choices. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ a hierarchical model where we treat the 5 year data set as side data to inform our prior choices. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
 
 # Preliminary EDA and Data Preparation
 
@@ -74,28 +93,28 @@ x.ts.5.stl <- stl(x.ts.5.train, s.window = "periodic")
 x.ts.5.dst <- x.ts.5.train - x.ts.5.stl$time.series[,"seasonal"] - x.ts.3.stl$time.series[,"trend"]
 
 plot(x.ts.3.dst, main = "Deseasonalized & detrended S&P 500 Index over 3 years")
-acf(x.ts.3.dst, lag.max = 500, main = "ACF of deseasonalized/detrended S&P 500 Index over 3 years")
-pacf(x.ts.3.dst, lag.max = 500, main = "PACF of deseasonalized/detrended S&P 500 Index over 3 years")
+acf(x.ts.3.dst, lag.max = 730, main = "ACF of deseasonalized/detrended S&P 500 Index over 3 years")
+pacf(x.ts.3.dst, lag.max = 730, main = "PACF of deseasonalized/detrended S&P 500 Index over 3 years")
 
 plot(x.ts.5.dst, main = "Deseasonalized & detrended S&P 500 Index over 5 years")
-acf(x.ts.5.dst, lag.max = 500, main = "ACF of deseasonalized S&P 500 index over 5 years")
-pacf(x.ts.5.dst, lag.max = 500, main = "PACF of deseasonalized S&P 500 index over 5 years")
+acf(x.ts.5.dst, lag.max = 730, main = "ACF of deseasonalized S&P 500 index over 5 years")
+pacf(x.ts.5.dst, lag.max = 730, main = "PACF of deseasonalized S&P 500 index over 5 years")
 ```
 
 ## Applying differencing for SARIMA
 
-Despite the deseasonalization and detrending of the data, the time series still exhibits some seasonality and trend. Therefore, we perform differencing at lag one and seasonal differencing at lag 251 (since we seem to have a seasonal period of 1 year. Note that the S&P 500 does not include data on days where the market is closed) in an attempt to obtain a stationary time series.
+Despite the deseasonalization and detrending of the data, the time series still exhibits some seasonality and trend. Therefore, we perform differencing at lag one and seasonal differencing at lag 365 (since we seem to have a seasonal period of 1 year. Note that the S&P 500 does not include data on days where the market is closed) in an attempt to obtain a stationary time series.
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 x.ts.3.diff1 = diff(x.ts.3.dst, lag = 1)
-x.ts.3.diff2 = diff(x.ts.3.diff1, lag = 251)
+x.ts.3.diff2 = diff(x.ts.3.diff1, lag = 365)
 
 plot(x.ts.3.diff2, main = "S&P 500 Index over 3 years after seasonal differencing", ylab = "S&P 500 Index (after seasonal differencing)")
-acf(x.ts.3.diff2, lag.max = 500, main = "ACF of S&P 500 Index over 3 years after seasonal differencing")
-pacf(x.ts.3.diff2, lag.max = 500, main = "PACF of S&P 500 Index over 3 years after seasonal differencing")
+acf(x.ts.3.diff2, lag.max = 730, main = "ACF of S&P 500 Index over 3 years after seasonal differencing")
+pacf(x.ts.3.diff2, lag.max = 730, main = "PACF of S&P 500 Index over 3 years after seasonal differencing")
 
 x.ts.5.diff1 = diff(x.ts.5.dst, lag = 1)
-x.ts.5.diff2 = diff(x.ts.5.diff1, lag = 251)
+x.ts.5.diff2 = diff(x.ts.5.diff1, lag = 365)
 
 plot(x.ts.5.diff2, main = "S&P 500 Index over 5 years after seasonal differencing", ylab = "S&P 500 Index (after seasonal differencing)")
 acf(x.ts.5.diff2, lag.max = 720, main = "ACF of S&P 500 Index over 5 years after seasonal differencing")
@@ -108,24 +127,53 @@ After the application of differencing on both time series, they may be considere
 =======
 ## SARIMA Model
 
-Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 251$. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC
+Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 365$ would be appropriate; but due to the limitations of the `stats` package in `R`, we are unable to use a period of $s = 365$ for our model as its max period is $s=350$; instead, we adopt $s=182$ to represent biannual fluctuations instead. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC using a simple grid search. 
 
-```{r, echo = FALSE}
-out.aic <-matrix(nrow=4, ncol=4)
-for(p in 0:3) {for(q in 0:3){
-fm <- arima(x.ts.5.train, order=c(p,1,q), seasonal=list(order=c(0,1,1)),include.mean = FALSE)
-out.aic[p+1,q+1] <-AIC(fm)
-}
-}
-order_ind =which(out.aic== min(out.aic), arr.ind = TRUE)
-p <- order_ind[1]-1
-q <- order_ind[2]-1
+As a result of the heavy computations needed to generate each SARIMA model, we omit the results from this knit pdf. However, we conclude that $p = 0, q = 0$ are the most appropriate values for the SARIMA model as the decreases in the model's AIC are minimal (in the order of magnitude of $10^{-1}$ unit decrements). Therefore, we choose the simplest model through parsimony; we display the SARIMA models for both datasets in the below code cells. 
+
+```{r, echo = FALSE, include = FALSE}
+# # Grid search for "best" model. Note: models which have p, q > 0 take up multiple GB of RAM to process
+# out.aic <-matrix(nrow=3, ncol=3)
+# for(p in 0:5) {for(q in 0:5){
+#   model_aic  <- AIC(arima(x.ts.5.train, order=c(p,1,q), seasonal=list(order=c(0,1,1)),include.mean = # FALSE))
+#   print(model_aic)
+#   out.aic[p+1,q+1] <- model_aic
+# }}
+# order_ind =which(out.aic== min(out.aic), arr.ind = TRUE)
+# p <- order_ind[1]-1
+# q <- order_ind[2]-1
 ```
 
+```{r}
+sarima.model.3 <- arima(x.ts.3.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 182),include.mean = FALSE) # use period of 91 to represent a biannual fluctuation.
+sarima.model.3
+
+sarima.model.5 <- arima(x.ts.5.train, order=c(0,1,0), seasonal=list(order=c(0,1,1), period = 182),include.mean = FALSE) # use period of 182 to represent a biannual fluctuations
+sarima.model.5
+```
+
+```{r, echo = FALSE}
+sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TRUE)
+sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
+```
+
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
+plot(x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000))
+lines(sarima.3.preds$pred, col = "#FF0000")
+lines(sarima.3.preds$pred - qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed")
+lines(sarima.3.preds$pred + qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed")
+
+
+lines(sarima.5.preds$pred, col = "#0000FF")
+lines(sarima.5.preds$pred - qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed")
+lines(sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed")
+
+legend("topleft", legend = c("Test Data", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "dashed"))
+```
 
 # Model Development
 We start by constructing a Bayesian model for the three year data, then we will
-make the model more complex. Acf and pacf analysis of the data showed that an 
+make the model more complex. ACF and PACF analysis of the data showed that an 
 $AR(1)$ process is suitable. Therefore, we incorporate this knowledge into our 
 Bayesian model. Let $i$ be the time index and $y$ be the deaseasonalized time 
 series. 
@@ -179,8 +227,8 @@ generated quantities {
 ```
 
 
-We use the data from April $2021$ to April $4$th $2024$ for training. Further, 
-the data from April $5$th and $8$th$2024$ will be used for testing.
+We use the data from April $2021$ to Feburary $2024$ for training. Further, 
+the data from March $2024$ to April $2024$ will be used for testing.
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 suppressMessages(require(rstan))
@@ -209,7 +257,7 @@ yhats = colMeans(samples$yhat)
 
 We plot the predictions, actual values, and $95 \%$ confidence intervals as 
 follows :
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, echo = FALSE, out.width="50%", out.height="100%"}
 cı.yhat1 = quantile(samples$yhat[,1], c(0.025, 0.975))
 cı.yhat2 = quantile(samples$yhat[,2], c(0.025, 0.975))
 preds.ts = ts(yhats, start = as.Date("2024-4-5"), end = as.Date("2024-4-8"))
