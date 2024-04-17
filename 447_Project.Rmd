@@ -261,25 +261,41 @@ legend("topleft", legend = c("Predictions","Actual Values", "Predictions Interva
 
 
 
-Now, we will use the five year data that, and will try to find 
-the change points within the data. From the time series plot of the five year data, it seems that 
-the change point occurs around COVID times. To find the change point we use the
-following model :
+Now, we will use the five year data, and will try to find 
+the change points within the data. From the time series plot of the five year data, 
+it seems that there are multiple change point candidates, one of them being around 
+COVID times. We assume that there are two change points, and therefore three 
+$\alpha$ values corresponding the divided regions. Furher, we assume that 
+each region has the same standard deviation for simplicity. 
+To find the change point we use the following alternation of Kernels model :
 
-```{r}
+$$K = K_1 \circ K_2 \circ K_3$$
+, where $K_1$ only modifies $\sigma$, $K_2$ only modifies the $\alphas$'s, and
+$K_3$ only modifies the change points. We know that if $K_1$, $K_2$, and $K_3$
+are $\pi$-invariant, then $K$ is too. For this particular target distribution, we can 
+say that $K_1$ is irreducible if the proposal for $K_1$ can reach all of $R_{+}$
+from any starting point. Further, $K_2$ is irreducible if the the proposal for 
+$K_2$ can reach all of $R_{+}^3$ from any starting point. Lastly, $K_3$ is irreducible
+if the proposal for $K_3$ can reach all of $\{1,2,..., 627\} \times \{628, 629,..., 1255\}$ 
+from any starting point. For the sigma, we use a normal distribution centered at
+the current $\sigma$:
+$$\sigma \sim N()$$
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
 
 log_joint = function(sigma, alphas, change_point, y) {
   
   # Return log(0.0) if parameters are outside of the support
-  if (sigma < 0 | alphas[[1]] < 0 | alphas[[2]] < 0 | alphas[3] < 0) 
+  if (sigma < 0) 
     return(-Inf)
   
   log_prior = 
     dexp(sigma, 1/100, log = TRUE) +
     dnorm(alphas[[1]], 1, 0.001, log = TRUE) +
     dnorm(alphas[[2]], 1, 0.001, log = TRUE) +
-    dnorm(alphas[[3]], 1, 0.001, log = TRUE)
+    dnorm(alphas[[3]], 1, 0.001, log = TRUE) +
+    dnorm(alphas[[4]], 1, 0.001, log = TRUE) +
+    dnorm(alphas[[5]], 1, 0.001, log = TRUE)
   
   log_likelihood = 0.0
   for (i in 1:length(y)) {
@@ -288,8 +304,13 @@ log_joint = function(sigma, alphas, change_point, y) {
       
     }  else if(change_point[1] <= i & i < change_point[2]){
       alpha = alphas[[2]]
-    } else {
-      alpha = alphas[3]
+    } else if (change_point[2] <= i & i < change_point[3]){
+      alpha = alphas[[3]]
+    } else if (change_point[3] <= i & i < change_point[4]){
+      alpha = alphas[[4]]
+    }
+    else {
+      alpha = alphas[5]
     }
     if (i == 1){
       log_likelihood = log_likelihood + dnorm(y[[i]], alpha*y[[i]], sigma, log = TRUE)
@@ -303,13 +324,13 @@ log_joint = function(sigma, alphas, change_point, y) {
 }
 ```
 
-Then we specify three kernels, one for  $\alpha$ and change point.
+Then we specify three kernels, one for $sigma$,  $\alpha$, and change point.
 
 ```{r}
 kernel1 = function(gamma, current_point, alphas, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
-ratio = gamma(proposal, alphas, change.p,y ) / gamma(current_point, alphas, change.p, y)
+ratio = exp(gamma(proposal, alphas, change.p,y ) - gamma(current_point, alphas, change.p, y))
 if (runif(1) < ratio & ratio != Inf) {
 return(proposal)
 } else {
@@ -324,7 +345,7 @@ return(current_point)
 kernel2 = function(gamma, sigma, current_point, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
-ratio = gamma(sigma, proposal, change.p,y) / gamma(sigma, current_point, change.p, y)
+ratio = exp(gamma(sigma, proposal, change.p,y) - gamma(sigma, current_point, change.p, y))
 if (runif(1) < ratio & ratio != Inf) {
 return(proposal)
 } else {
@@ -338,10 +359,12 @@ return(current_point)
 ```{r}
 kernel3 = function(gamma, sigma, alphas, current_point, y) {
 dim = length(current_point)
-proposal1 = sample(1:(length(y)/2 - 1), size = 1)
-proposal2 = sample((length(y)/2) : length(y), size = 1)
-proposal = c(proposal1, proposal2)
-ratio = gamma(sigma, alphas, proposal, y) / gamma(sigma, alphas, current_point, y)
+proposal1 = sample(1:floor(length(y)/4) , size = 1)
+proposal2 = sample(seq(floor(length(x.ts.5.train)/4) + 1, 2*floor(length(x.ts.5.train)/4)), size = 1)
+proposal3 = sample(seq(2*floor(length(x.ts.5.train)/4) + 1, 3*floor(length(x.ts.5.train)/4)), size = 1)
+proposal4 = sample(seq(floor(3*length(x.ts.5.train)/4) + 1, 4*floor(length(x.ts.5.train)/4)), size = 1)
+proposal = c(proposal1, proposal2, proposal3, proposal4)
+ratio = exp(gamma(sigma, alphas, proposal, y) - gamma(sigma, alphas, current_point, y))
 if (runif(1) < ratio & ratio != Inf) {
 return(proposal)
 } else {
@@ -368,34 +391,64 @@ rho_helper = function(){
 mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
   change_point_trace1 = rep(-1, n_iterations)
   change_point_trace2 = rep(-1, n_iterations)
+  change_point_trace3 = rep(-1, n_iterations)
+  change_point_trace4 = rep(-1, n_iterations)
+  sigma_trace = rep(-1, n_iterations)
+  alpha1_trace = rep(-1, n_iterations)
+  alpha2_trace = rep(-1, n_iterations)
+  alpha3_trace = rep(-1, n_iterations)
+  alpha4_trace = rep(-1, n_iterations)
+  alpha5_trace = rep(-1, n_iterations)
+  
   for (i in 1:n_iterations) {
     rho = rho_helper() # choose kernel
     
     if (rho == 1){
-      sigma = kernel1(log_joint, sigma, alphas, 10, change_point, y)
+      sigma = kernel1(log_joint, sigma, alphas, 5, change_point, y)
       change_point_trace1[i] = change_point[1]
       change_point_trace2[i] = change_point[2]
+      change_point_trace3[i] = change_point[3]
+      change_point_trace4[i] = change_point[4]
+      sigma_trace[i] = sigma
     }
     else if(rho == 2){
       alphas =  kernel2(log_joint, sigma, alphas, 0.001, change_point, y)
       change_point_trace1[i] = change_point[1]
       change_point_trace2[i] = change_point[2]
+      change_point_trace3[i] = change_point[3]
+      change_point_trace4[i] = change_point[4]
+      alpha1_trace[i] = alphas[1]
+      alpha2_trace[i] = alphas[2]
+      alpha3_trace[i] = alphas[3]
+      alpha4_trace[i] = alphas[4]
+      alpha5_trace[i] = alphas[5]
       
 } 
     else{
       change_point = kernel3(log_joint, sigma, alphas, change_point, y)
-       change_point_trace1[i] = change_point[1]
+      change_point_trace1[i] = change_point[1]
       change_point_trace2[i] = change_point[2]
+      change_point_trace3[i] = change_point[3]
+      change_point_trace4[i] = change_point[4]
       
     }
   }
   
   return(
     list(
+      
       change_point_trace1 = change_point_trace1,
-       change_point_trace2 = change_point_trace2,
+      change_point_trace2 = change_point_trace2,
+      change_point_trace3 = change_point_trace3,
+      change_point_trace4 = change_point_trace4,
       last_iteration_sigma = sigma,
-      last_iteration_alphas = alphas
+      last_iteration_alphas = alphas,
+      sigma_trace = sigma_trace,
+      alpha1_trace = alpha1_trace,
+      alpha2_trace = alpha2_trace,
+      alpha3_trace = alpha3_trace,
+      alpha4_trace = alpha4_trace,
+      alpha5_trace = alpha5_trace
     )
   )
 }
@@ -405,17 +458,28 @@ mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
 
 
 ```{r}
-output = suppressWarnings(mcmc(log_joint, 45, c(1,1, 1), c(200, 700), x.ts.5.train, 20000))
+set.seed(12)
+output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(200, 500, 800, 1100), x.ts.5.train, 20000))
 ```
 
 
 ```{r}
 hist(output$change_point_trace1[output$change_point_trace1 != -1])
 hist(output$change_point_trace2[output$change_point_trace2 != -1])
+hist(output$change_point_trace3[output$change_point_trace3 != -1])
+hist(output$change_point_trace4[output$change_point_trace4 != -1])
 ```
 
 
 
+```{r}
+mean(output$sigma_trace[output$sigma_trace != -1])
+mean(output$alpha1_trace[output$alpha1_trace != -1])
+mean(output$alpha2_trace[output$alpha2_trace != -1])
+mean(output$alpha3_trace[output$alpha3_trace != -1])
+mean(output$alpha4_trace[output$alpha4_trace != -1])
+mean(output$alpha5_trace[output$alpha5_trace != -1])
+```
 
 
 
