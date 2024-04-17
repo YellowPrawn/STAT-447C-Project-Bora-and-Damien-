@@ -63,11 +63,19 @@ x.ts.test = window(x.ts.3,
 
 # Introduction
 
-Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ a hierarchical model where we treat the 5 year data set as side data to inform our prior choices. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ kernel mixtures to detect change-points for S&P 500's historic data from the previous 5 years; this encapsulates the effects of the COVID-19 pandemic where there exists a large sudden drop in the S&P 500 Index. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+
+# Literature Review
+
+This project is heavily inspired by the STAT 443 course. The modelling and forecasting techniques used in the frequentist approach (Box-Jenkins SARIMA) are heavily inspired by the techniques and practices learned in STAT 443. As a result of this, we refer to the textbook used in STAT 443: "C. Cha]ield and H. Xing (2019): The Analysis of Time Series: An
+Introduction with R (7th edition). Chapman & Hall/CRC." for our techniques and theory. The code used to generate our results and models within the EDA and data preparation section are based off the lecture notes and various assignments provided in STAT 443. 
+
+The idea of
+
 
 # Preliminary EDA and Data Preparation
 
-To determine model performance without data leakage, we reserve the most recent month (Mar 2024 to Apr 2024) of S&P 500 data as an unseen test set. As such, we conduct our EDA and data preparation with the remaining data.
+To determine model performance without data leakage, we reserve the data from Mar 2024 to Apr 2024 of the S&P 500 index data as an unseen test set. As such, we conduct our EDA and data preparation with the remaining data. This section also serves as a way to determine the appropriate SARIMA model using Box-Jenkins to give us our frequentist model comparator to our Bayesian model.
 
 ```{r, echo = FALSE, out.width="50%"}
 
@@ -277,12 +285,13 @@ Now, we will use the five year data, and will try to find
 the change points within the data. From the time series plot of the five year data, 
 it seems that there are multiple change point candidates, one of them being around 
 COVID times. We assume that there are two change points, and therefore three 
-$\alpha$ values corresponding the divided regions. Furher, we assume that 
+$\alpha$ values corresponding the divided regions. Further, we assume that 
 each region has the same standard deviation for simplicity. 
 To find the change point we use the following alternation of Kernels model :
 
 $$K = K_1 \circ K_2 \circ K_3$$
-, where $K_1$ only modifies $\sigma$, $K_2$ only modifies the $\alphas$'s, and
+
+, where $K_1$ only modifies $\sigma$, $K_2$ only modifies the $\alpha$'s, and
 $K_3$ only modifies the change points. We know that if $K_1$, $K_2$, and $K_3$
 are $\pi$-invariant, then $K$ is too. For this particular target distribution, we can 
 say that $K_1$ is irreducible if the proposal for $K_1$ can reach all of $R_{+}$
@@ -291,7 +300,9 @@ $K_2$ can reach all of $R_{+}^3$ from any starting point. Lastly, $K_3$ is irred
 if the proposal for $K_3$ can reach all of $\{1,2,..., 627\} \times \{628, 629,..., 1255\}$ 
 from any starting point. For the sigma, we use a normal distribution centered at
 the current $\sigma$:
+
 $$\sigma \sim N()$$
+
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
 
@@ -338,7 +349,7 @@ log_joint = function(sigma, alphas, change_point, y) {
 
 Then we specify three kernels, one for $sigma$,  $\alpha$, and change point.
 
-```{r}
+```{r, echo = FALSE}
 kernel1 = function(gamma, current_point, alphas, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
@@ -353,7 +364,7 @@ return(current_point)
 
 
 
-```{r}
+```{r, echo = FALSE}
 kernel2 = function(gamma, sigma, current_point, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
@@ -368,7 +379,7 @@ return(current_point)
 
 
 
-```{r}
+```{r, echo = FALSE}
 kernel3 = function(gamma, sigma, alphas, current_point, y) {
 dim = length(current_point)
 proposal1 = sample(1:floor(length(y)/4) , size = 1)
@@ -388,7 +399,7 @@ return(current_point)
 
 
 
-```{r}
+```{r, echo = FALSE}
 rho_helper = function(){
   rho = runif(1)
   if(rho < 1/3){
@@ -469,13 +480,13 @@ mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
 
 
 
-```{r}
+```{r, echo = FALSE}
 set.seed(12)
 output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(200, 500, 800, 1100), x.ts.5.train, 20000))
 ```
 
 
-```{r}
+```{r, echo = FALSE, out.width="50%", out.height="100%"}
 hist(output$change_point_trace1[output$change_point_trace1 != -1])
 hist(output$change_point_trace2[output$change_point_trace2 != -1])
 hist(output$change_point_trace3[output$change_point_trace3 != -1])
@@ -484,7 +495,7 @@ hist(output$change_point_trace4[output$change_point_trace4 != -1])
 
 
 
-```{r}
+```{r, echo = FALSE}
 mean(output$sigma_trace[output$sigma_trace != -1])
 mean(output$alpha1_trace[output$alpha1_trace != -1])
 mean(output$alpha2_trace[output$alpha2_trace != -1])
