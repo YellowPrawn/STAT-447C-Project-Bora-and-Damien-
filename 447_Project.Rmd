@@ -298,10 +298,25 @@ say that $K_1$ is irreducible if the proposal for $K_1$ can reach all of $R_{+}$
 from any starting point. Further, $K_2$ is irreducible if the the proposal for 
 $K_2$ can reach all of $R_{+}^5$ from any starting point. Lastly, $K_3$ is irreducible
 if the proposal for $K_3$ can reach all of 
-$$\{1,2,..., 313\} \times \{314, 315,..., 626\} \times \{627, 628, ..., 939\} \times \{940, 941, ..., 1255\} $$
+$$\{1,2,..., 447\} \times \{448, 315,..., 894\} \times \{895, 628, ..., 1341\} \times \{1342, 941, ..., 1788\} $$
 from any starting point. For the sigma, we use a normal distribution centered at
-the current $\sigma$:
+the current $\sigma$ as the proposal distribution:
 $$\sigma' \sim N(\sigma, 5)$$
+For $\alpha$'s we will use a multivariate normal distribution centered at the 
+current $\alpha$'s as the proposal distribution :
+
+$$\alpha' \sim N(\alpha, 0.001)$$
+Lastly, for each change point, we use a discrete uniform distribution as the proposal
+
+$$c_1' \sim Unif\{1, 447\}$$
+
+$$c_2' \sim Unif\{447, 894\}$$
+
+$$c_3' \sim Unif\{895, 1341\}$$
+$$c_4' \sim Unif\{1342, 1788\}$$
+By our choice of proposals, the MCMC can reach any point in 
+$\{1,2,..., 447\} \times \{448, 315,..., 894\} \times \{895, 628, ..., 1341\} \times \{1342, 941, ..., 1788\}$
+
 
 ```{r, echo = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
