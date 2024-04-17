@@ -37,14 +37,30 @@ df <- data.frame(V1=ts)
 df_five <- full_join(df,df_five) %>%
   fill(V2)
 
-x.ts.3 = ts(df_three$V2, start = 2021, freq = 365)
-x.ts.5 = ts(df_five$V2, start = 2019, freq = 365)
-
-x.ts.3.train = window(x.ts.3, start=c(2021,4), end=c(2024,3), frequency = 12)
-x.ts.5.train = window(x.ts.5, start=c(2019,4), end=c(2024,3), frequency = 12)
 
 
-x.ts.test = window(x.ts.3, start=c(2024,3), end=c(2024,4), frequency = 12)
+x.ts.3 = ts(df_three$V2, 
+            start = c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
+            freq = 365)
+x.ts.5 = ts(df_five$V2, 
+            start = c(2019, as.numeric(format(as.Date("2019-04-08"), "%j"))), 
+            freq = 365)
+
+x.ts.3.train = window(x.ts.3, 
+                      start=c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
+                      end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
+                      frequency = 365)
+
+x.ts.5.train = window(x.ts.5, 
+                      start=c(2019, as.numeric(format(as.Date("2019-04-08"), "%j"))), 
+                      end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
+                      frequency = 365)
+
+
+x.ts.test = window(x.ts.3, 
+                   start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
+                   end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
+                   frequency = 365)
 ```
 
 # Introduction
