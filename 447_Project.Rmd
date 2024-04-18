@@ -583,8 +583,8 @@ exact_invariance = function(joint) {
   ks.test(forward_only, with_mcmc)
 }
 
-test_result = exact_invariance(buggy_joint)
-test_result
+#test_result = exact_invariance(mcmc)
+#test_result
 ```
 
 
