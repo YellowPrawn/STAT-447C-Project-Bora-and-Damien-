@@ -37,6 +37,7 @@ df <- data.frame(V1=ts)
 df_five <- full_join(df,df_five) %>%
   fill(V2)
 
+# Converting data into time series
 x.ts.3 = ts(df_three$V2, 
             start = c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
             freq = 365)
@@ -44,6 +45,7 @@ x.ts.5 = ts(df_five$V2,
             start = c(2019, as.numeric(format(as.Date("2019-04-08"), "%j"))), 
             freq = 365)
 
+# Obtaining training data
 x.ts.3.train = window(x.ts.3, 
                       start=c(2021, as.numeric(format(as.Date("2021-04-08"), "%j"))), 
                       end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
@@ -54,7 +56,7 @@ x.ts.5.train = window(x.ts.5,
                       end=c(2024, as.numeric(format(as.Date("2024-02-29"), "%j"))), 
                       frequency = 365)
 
-
+# Obtaining testing data (Since data for 3 years is a subset of 5 years, the data that exists within the 2024/3/1 and 2024/4/8 should be the same across both datasets)
 x.ts.test = window(x.ts.3, 
                    start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
                    end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
@@ -67,13 +69,15 @@ Throughout the duration of this outgoing academic term, we have both been underg
 
 # Literature Review
 
-This project is heavily inspired by the STAT 443 course. The modelling and forecasting techniques used in the frequentist approach (Box-Jenkins SARIMA) are heavily inspired by the techniques and practices learned in STAT 443. As a result of this, we refer to the textbook used in STAT 443: "C. Cha]ield and H. Xing (2019): The Analysis of Time Series: An
-Introduction with R (7th edition). Chapman & Hall/CRC." for our techniques and theory. The code used to generate our results and models within the EDA and data preparation section are based off the lecture notes and various assignments provided in STAT 443. 
+This project is heavily inspired by the STAT 443 course. The modelling and forecasting techniques used in the frequentist approach (Box-Jenkins SARIMA) are heavily inspired by the techniques and practices learned in STAT 443. As a result of this, we refer to the textbook used in STAT 443: C. Cha]ield and H. Xing 2019 for our techniques and theory. The code used to generate our results and models within the EDA and data preparation section are based off the lecture notes and various assignments provided in STAT 443. 
 
-The idea of using SARIMA for predicting the S&P 500 can be seen in Dun 2023. As such, we believe that an ARIMA model is an appropriate modelling approach.
+The idea of using SARIMA for predicting the S&P 500 can be seen in Dun 2023. As such, we believe that an ARIMA model is an appropriate modelling approach that can be used as a baseline model that we may use as a comparator for our Bayesian model. This paper is relatively recent and contains data with a similar range as ours; they conclude that an $ARIMA(0,1,1)(0,0,0)[0]$ model is ideal for modelling the S&P500. Despite their promising results with a simple $ARIMA(0,1,1)(0,0,0)[0]$ model, some of their data preprocessing techniques are not outlined, and therefore it is hard to recreate their results accordingly. Using just the training data (details outlined in the upcoming section) and the same ARIMA model as Dun's paper, we obtain an AIC of 10693.23 compared to Dun's AIC of -34978.79
 
+```{r}
+arima(x.ts.3.train, order=c(0,1,1))
+```
 
-
+On the other hand, Christoffersen 2012 uses an MCMC approach that encorporates "jumps" to model the S&P 500 index; similarly to our case with COVID-19, their study included a relatively big fluctuation in their time series data: the 2008 financial crisis. Their model focuses on dealing with cases where sudden changes to the time series are observed, albeit, with a different approach to ours. The demonstration that MCMC is capable of handling sudden significant changes such as long as the model is provided with additional "tools" to account for them. With the limited time and resources of a course project, we will simply use kernel mixtures to detect change-points as outlined in the introduction.
 
 # Preliminary EDA and Data Preparation
 
@@ -134,7 +138,6 @@ pacf(x.ts.5.diff2, lag.max = 720, main = "PACF of S&P 500 Index over 5 years aft
 After the application of differencing on both time series, they may be considered stationary.
 
 
-=======
 ## SARIMA Model
 
 Using the EDA and prepared data from the previous section, we can determine the appropriate $SARIMA(p,d,q)(P,D,Q)_s$ model accordingly. From the application of differencing, we have determined that $d = 1, D = 1, s = 365$ would be appropriate; but due to the limitations of the `stats` package in `R`, we are unable to use a period of $s = 365$ for our model as its max period is $s=350$; instead, we adopt $s=182$ to represent biannual fluctuations instead. By the sample ACFs and PACFs, lag values before the 1.0 lag marker are above the significance line while lag values after are consistently under. This implies that $P = 0$ and $Q = 1$. To determine the ideal p and q values given that the remaining parameters in the $SARIMA$ model are set as described, we find the values of $p, q$ that yield the lowest AIC using a simple grid search. 
@@ -167,12 +170,12 @@ sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TR
 sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
 ```
 
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, echo = FALSE, out.width="50%", out.height="100%"}
 
 time <- seq.POSIXt(as.POSIXlt("2024-03-01"), as.POSIXlt("2024-04-09"), by="day")
 time <- as.Date(format.POSIXct(time,'%Y-%m-%d'))
 
-plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l')
+plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "SARIMA model predictions compared to test data")
 lines(time, sarima.3.preds$pred, col = "#FF0000", type = 'l')
 lines(time, sarima.3.preds$pred - qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
 lines(time, sarima.3.preds$pred + qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
@@ -183,11 +186,21 @@ lines(time, sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000
 legend("topleft", legend = c("Test Data", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "dashed"))
 ```
 
+The above plot shows the SARIMA model's predicted values compared to the test data. We can see that the model seems to underestimate the S&P 500 Index instead of overestimate. However, the prediction intervals seem to still capture the test data with 95% confidence. Therefore, the SARIMA model is reasonably appropriate for modelling the S&P 500 for both the 3 year dataset and the 5 year dataset.
+
+```{r, echo = FALSE}
+mean((sarima.3.preds$pred - x.ts.test)^2)
+mean((sarima.5.preds$pred - x.ts.test)^2)
+```
+
+To compare the SARIMA model's performance with the bayesian approach our project demonstrates, we compute the mean squared prediction error (MSPE) of both SARIMA models to be $32688.32$ for the model trained on the 3 year dataset, and $36738.45$ for the model trained on the 5 year dataset. We will compute the MSPE for the MCMC model later in this report.
+
+
 # Model Development
 We start by constructing a Bayesian model for the three year data, then we will
 make the model more complex. ACF and PACF analysis of the data showed that an 
 $AR(1)$ process is suitable. Therefore, we incorporate this knowledge into our 
-Bayesian model. Let $i$ be the time index and $y$ be the deaseasonalized time 
+Bayesian model. Let $i$ be the time index and $y$ be the deseasonalized time 
 series. 
 
 
@@ -204,6 +217,7 @@ real initial;
 real final;
 vector [N] y; // SP 500 index value
 }
+
 parameters {
   real <lower = 0> sigma;
   real alpha;
@@ -214,35 +228,26 @@ model {
   alpha ~ normal(0, 10);
   for (i in 1:N){
     if (i == 1){
-    y[i] ~ normal(alpha*initial, sigma);
-} else{
-  y[i] ~ normal(alpha*y[i-1], sigma);
-}
-
-}
-
-}
+      y[i] ~ normal(alpha*initial, sigma);
+    } else{
+      y[i] ~ normal(alpha*y[i-1], sigma);
+}}}
 
 generated quantities {
   vector [39] yhat;
   for (i in 1:39){
-  if (i == 1){
-  yhat[i] = normal_rng(alpha*final, sigma);
-} else{
-  yhat[i] =  normal_rng(alpha*yhat[i-1], sigma);
-  
-}
-  
-}
-
-}
+    if (i == 1){
+      yhat[i] = normal_rng(alpha*final, sigma);
+    } else{
+      yhat[i] =  normal_rng(alpha*yhat[i-1], sigma);
+}}}
 ```
 
 
 We use the data from April $2021$ to Feburary $2024$ for training. Further, 
 the data from March $2024$ to April $2024$ will be used for testing.
 
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, include = FALSE}
 suppressMessages(require(rstan))
 train = x.ts.3.train
 
@@ -261,7 +266,7 @@ fit = sampling(
 
 ```
 
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, include = FALSE, out.width="33%", out.height="150%"}
 samples = extract(fit)
 fit
 yhats = colMeans(samples$yhat)
@@ -290,13 +295,11 @@ lines(time, preds.ts + qnorm(0.975) * preds.se.ts, col = "purple", lty = "dashed
 legend("topleft", legend = c("Test Data", "STAN Model", "PI Bounds"), col = c("#000000", "purple", "#000000"), lty = c("solid", "solid", "dashed"))
 ```
 
-
-
 Now, we will use the five year data, and will try to find 
 the change points within the data. From the time series plot of the five year data, 
 it seems that there are multiple change point candidates, one of them being around 
 COVID times. We assume that there are four change points, and therefore five 
-$\alpha$ values corresponding the divided regions. Furher, we assume that 
+$\alpha$ values corresponding the divided regions. Further, we assume that 
 each region has the same standard deviation for simplicity. 
 To find the change point we use the following alternation of Kernels model :
 
@@ -314,7 +317,7 @@ from any starting point. For the sigma, we use a normal distribution centered at
 the current $\sigma$:
 $$\sigma' \sim N(\sigma, 5)$$
 
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, include = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
 
 log_joint = function(sigma, alphas, change_point, y) {
@@ -360,7 +363,7 @@ log_joint = function(sigma, alphas, change_point, y) {
 
 Then we specify three kernels, one for $sigma$,  $\alpha$, and change point.
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 kernel1 = function(gamma, current_point, alphas, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
@@ -375,7 +378,7 @@ return(current_point)
 
 
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 kernel2 = function(gamma, sigma, current_point, proposal_sd, change.p, y) {
 dim = length(current_point)
 proposal = rnorm(dim, mean = current_point, sd = proposal_sd)
@@ -390,27 +393,26 @@ return(current_point)
 
 
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 kernel3 = function(gamma, sigma, alphas, current_point, y) {
-dim = length(current_point)
-proposal1 = sample(1:floor(length(y)/4) , size = 1)
-proposal2 = sample(seq(floor(length(y)/4) + 1, 2*floor(length(y)/4)), size = 1)
-proposal3 = sample(seq(2*floor(length(y)/4) + 1, 3*floor(length(y)/4)), size = 1)
-proposal4 = sample(seq(3*floor(length(y)/4) + 1, length(y)), size = 1)
-proposal = c(proposal1, proposal2, proposal3, proposal4)
-ratio = exp(gamma(sigma, alphas, proposal, y) - gamma(sigma, alphas, current_point, y))
-if (runif(1) < ratio & ratio != Inf) {
-return(proposal)
-} else {
-return(current_point)
-}
-}
+  dim = length(current_point)
+  proposal1 = sample(1:floor(length(y)/4) , size = 1)
+  proposal2 = sample(seq(floor(length(y)/4) + 1, 2*floor(length(y)/4)), size = 1)
+  proposal3 = sample(seq(2*floor(length(y)/4) + 1, 3*floor(length(y)/4)), size = 1)
+  proposal4 = sample(seq(3*floor(length(y)/4) + 1, length(y)), size = 1)
+  proposal = c(proposal1, proposal2, proposal3, proposal4)
+  ratio = exp(gamma(sigma, alphas, proposal, y) - gamma(sigma, alphas, current_point, y))
+  if (runif(1) < ratio & ratio != Inf) {
+    return(proposal)
+  } else {
+    return(current_point)
+}}
 ```
 
 
 
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 rho_helper = function(){
   rho = runif(1)
   if(rho < 1/3){
@@ -491,13 +493,13 @@ mcmc = function(gamma, sigma, alphas, change_point, y, n_iterations){
 
 
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 set.seed(12)
 output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 1460), x.ts.5.train, 20000))
 ```
 
 
-```{r, echo = FALSE, out.width="50%", out.height="100%"}
+```{r, echo = FALSE, out.width="50%", out.height="50%"}
 hist(output$change_point_trace1[output$change_point_trace1 != -1])
 hist(output$change_point_trace2[output$change_point_trace2 != -1])
 hist(output$change_point_trace3[output$change_point_trace3 != -1])
@@ -506,7 +508,7 @@ hist(output$change_point_trace4[output$change_point_trace4 != -1])
 
 
 
-```{r, echo = FALSE}
+```{r}
 mean(output$sigma_trace[output$sigma_trace != -1])
 mean(output$alpha1_trace[output$alpha1_trace != -1])
 mean(output$alpha2_trace[output$alpha2_trace != -1])
@@ -519,6 +521,8 @@ mean(output$alpha5_trace[output$alpha5_trace != -1])
 # References
 
 Chatfield, Christopher, and Haipeng Xing. The Analysis of Time Series: An Introduction. CRC Press, 2019. 
+
+Christoffersen, Peter, Kris Jacobs, and Chayawat Ornthanalai. "Dynamic Jump Intensities and Risk Premiums: Evidence from S&P500 Returns and Options." Journal of Financial Economics, vol. 106, no. 3, 2012, pp. 447-472.
 
 Dun, Vadym. "Analysis and Forecasting the Price of the S&P 500 Index using the Arima Model." Financial Markets, Institutions and Risks, vol. 7, no. 4, 2023, pp. 113-134.
 
