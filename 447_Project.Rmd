@@ -531,9 +531,9 @@ output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 14
 
 ```{r, echo = FALSE, out.width="50%", out.height="50%"}
 hist(output$change_point_trace1[output$change_point_trace1 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
-hist(output$change_point_trace2[output$change_point_trace2 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
-hist(output$change_point_trace3[output$change_point_trace3 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
-hist(output$change_point_trace4[output$change_point_trace4 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
+hist(output$change_point_trace2[output$change_point_trace2 != -1], xlab = "Time (index within time series data)", main = "Change Point 2 trace plot")
+hist(output$change_point_trace3[output$change_point_trace3 != -1], xlab = "Time (index within time series data)", main = "Change Point 3 trace plot")
+hist(output$change_point_trace4[output$change_point_trace4 != -1], xlab = "Time (index within time series data)", main = "Change Point 4 trace plot")
 ```
 
 The spike in the plot for the first change point indicates that the change 
@@ -565,6 +565,31 @@ the change points. The highest $\alpha$ value was chosen for the fifth region,
 which is the one that is on the most right hand side. The first and the fourth 
 regions has the smallest $\alpha$ values.
 
+
+We make predictions with the change point model as follows. We use the $\alpha$
+value corresponding to the rightmost region.
+
+```{r, echo = FALSE}
+set.seed(123)
+alpha5.hat = mean(output$alpha5_trace[output$alpha5_trace != -1])
+sigma.hat = mean(output$sigma_trace[output$sigma_trace != -1])
+yhats.5 = rep(-1, length(x.ts.test))
+for (i in 1:length(x.ts.test)){
+  if(i == 1){
+     yhats.5[i] = rnorm(1, alpha5.hat*x.ts.5.train[length(x.ts.5.train)], sigma.hat)
+  } else{
+    yhats.5[i] = rnorm(1, alpha5.hat*yhats.5[i-1], sigma.hat)
+  }
+}
+```
+
+```{r, echo = FALSE}
+plot(time, x.ts.test, ylim =  c(5050, 5300) , main = "Actual Values vs Predictions by the Change Point Model")
+lines(time, yhats.5, col = "purple")
+```
+
+Evidently, the prediction performance has improved compared to the frequentist 
+and the simple bayesian model. Further, the model has gained flexibility.
 
 
 =======
