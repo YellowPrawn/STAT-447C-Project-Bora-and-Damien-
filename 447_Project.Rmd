@@ -170,7 +170,7 @@ sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TR
 sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
 ```
 
-```{r, echo = FALSE, out.width="50%", out.height="100%"}
+```{r, echo = FALSE, out.width="100%", out.height="100%"}
 
 time <- seq.POSIXt(as.POSIXlt("2024-03-01"), as.POSIXlt("2024-04-09"), by="day")
 time <- as.Date(format.POSIXct(time,'%Y-%m-%d'))
@@ -275,7 +275,7 @@ yhats.se = apply(samples$yhat, 2, sd)
 
 We plot the predictions, actual values, and $95 \%$ confidence intervals as 
 follows :
-```{r, echo = FALSE, out.width="50%", out.height="100%"}
+```{r, echo = FALSE, out.width="100%", out.height="100%"}
 preds.ts = ts(yhats, 
               start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
               end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
@@ -547,6 +547,50 @@ mean(output$alpha3_trace[output$alpha3_trace != -1])
 mean(output$alpha4_trace[output$alpha4_trace != -1])
 mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
+
+# Model Diagnostics (Exact Invariance Test)
+To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We employ the same code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
+
+```{r, echo = FALSE}
+forward = function() {
+  x = rbeta(1, alpha, beta) 
+  y = rbinom(1, n_trials, x)
+  return(
+    list(
+      x = x,
+      y = y
+    ))
+}
+
+stationary_mcmc = function(joint, n_iterations) {
+  initialization = forward()
+  y = initialization$y
+  if (n_iterations == 0) { 
+    return(initialization$x)
+  } else {
+    current_x = initialization$x
+    for (i in 1:n_iterations) {
+      proposed_x = current_x + rnorm(1) 
+      ratio = joint(proposed_x, y) / joint(current_x, y) 
+      if (runif(1) < ratio) {
+        current_x = proposed_x
+      }
+    }
+    return(current_x)
+  }
+}
+
+exact_invariance = function(joint) {
+  forward_only = replicate(1000, stationary_mcmc(joint, 0))
+  with_mcmc    = replicate(1000, stationary_mcmc(joint, 200))
+
+  ks.test(forward_only, with_mcmc)
+}
+
+test_result = exact_invariance(buggy_joint)
+test_result
+```
+
 
 
 # References
