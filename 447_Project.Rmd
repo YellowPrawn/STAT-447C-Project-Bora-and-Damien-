@@ -549,7 +549,7 @@ mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
 
 # Model Diagnostics (Exact Invariance Test)
-To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We employ the same code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
+To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We modify the code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
 
 ```{r, echo = FALSE}
 forward = function() {
@@ -592,6 +592,7 @@ test_result
 ```
 
 
+# Conclusion
 
 # References
 
