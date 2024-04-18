@@ -188,7 +188,7 @@ legend("topleft", legend = c("Test Data", "SARIMA (3 years)", "SARIMA (5 years)"
 
 The above plot shows the SARIMA model's predicted values compared to the test data. We can see that the model seems to underestimate the S&P 500 Index instead of overestimate. However, the prediction intervals seem to still capture the test data with 95% confidence. Therefore, the SARIMA model is reasonably appropriate for modelling the S&P 500 for both the 3 year dataset and the 5 year dataset.
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 mean((sarima.3.preds$pred - x.ts.test)^2)
 mean((sarima.5.preds$pred - x.ts.test)^2)
 ```
@@ -286,13 +286,20 @@ preds.se.ts = ts(yhats.se,
               end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
               frequency = 365)
 
-plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l')
+plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "MCMC model predictions VS test data VS SARIMA")
 
 lines(time, preds.ts, col = "purple", type = 'l')
 lines(time, preds.ts - qnorm(0.975) * preds.se.ts, col = "purple", lty = "dashed", type = 'l')
 lines(time, preds.ts + qnorm(0.975) * preds.se.ts, col = "purple", lty = "dashed", type = 'l')
 
-legend("topleft", legend = c("Test Data", "STAN Model", "PI Bounds"), col = c("#000000", "purple", "#000000"), lty = c("solid", "solid", "dashed"))
+lines(time, sarima.3.preds$pred, col = "#FF0000", type = 'l')
+lines(time, sarima.3.preds$pred - qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
+lines(time, sarima.3.preds$pred + qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
+lines(time, sarima.5.preds$pred, col = "#0000FF", type = 'l')
+lines(time, sarima.5.preds$pred - qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed", type = 'l')
+lines(time, sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed", type = 'l')
+
+legend("topleft", legend = c("Test Data", "MCMC Model", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "purple", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "solid", "dashed"))
 ```
 
 Now, we will use the five year data, and will try to find 
@@ -515,10 +522,10 @@ output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 14
 
 
 ```{r, echo = FALSE, out.width="50%", out.height="50%"}
-hist(output$change_point_trace1[output$change_point_trace1 != -1])
-hist(output$change_point_trace2[output$change_point_trace2 != -1])
-hist(output$change_point_trace3[output$change_point_trace3 != -1])
-hist(output$change_point_trace4[output$change_point_trace4 != -1])
+hist(output$change_point_trace1[output$change_point_trace1 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
+hist(output$change_point_trace2[output$change_point_trace2 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
+hist(output$change_point_trace3[output$change_point_trace3 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
+hist(output$change_point_trace4[output$change_point_trace4 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
 ```
 
 The spike in the plot for the first change point indicates that the change 
