@@ -519,6 +519,15 @@ hist(output$change_point_trace3[output$change_point_trace3 != -1])
 hist(output$change_point_trace4[output$change_point_trace4 != -1])
 ```
 
+The spike in the plot for the first change point indicates that the change 
+change point is around March $2023$, when COVID restriction started, which is 
+aligned with our expectations.The second change point seems to be between 
+$800$th and $900$th time indices, which corresponds to around August $2021$, 
+. Further, the third change point seem to be around $950$th or $1350$th time index, 
+which is also aligned with the plot. There seems to be three potential candidates
+for the fourth change point, the most notable one being around $1600th$ and $1700$th
+time indices, which corresponds to around October $2023$. Therefore, the fourth 
+change point is also aligned with the plot of the five year time series.
 
 
 ```{r, echo = FALSE}
