@@ -547,19 +547,15 @@ mean(output$alpha3_trace[output$alpha3_trace != -1])
 mean(output$alpha4_trace[output$alpha4_trace != -1])
 mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
-
 # Model Diagnostics (Exact Invariance Test)
 To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We modify the code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
 
+We use the `arima.sim()` function to generate our synthetic data from the model found in the EDA section of this project
+
 ```{r, echo = FALSE}
 forward = function() {
-  x = rbeta(1, alpha, beta) 
-  y = rbinom(1, n_trials, x)
-  return(
-    list(
-      x = x,
-      y = y
-    ))
+  x = arima.sim(n = 1, list(order = c(0, 1, 1)))
+  return(list(x = x))
 }
 
 stationary_mcmc = function(joint, n_iterations) {
@@ -593,6 +589,13 @@ test_result
 
 
 # Conclusion
+
+In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust. 
+
+
+## Limitations
+
+Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results.
 
 # References
 
