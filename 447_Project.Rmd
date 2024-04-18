@@ -539,6 +539,16 @@ mean(output$alpha4_trace[output$alpha4_trace != -1])
 mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
 
+It seems that the standard deviation $38.56$ is less than the bayesian 
+standard devation estimate for the three year data $45.46$. Further, by using
+a change point model using kernel mixtures, we had more flexibility in terms of
+having bayesian estimates of the $\alpha$ values for each region determined by 
+the change points. The highest $\alpha$ value was chosen for the fifth region,
+which is the one that is on the most right hand side. The first and the fourth 
+regions has the smallest $\alpha$ values.
+
+
+
 
 # References
 
