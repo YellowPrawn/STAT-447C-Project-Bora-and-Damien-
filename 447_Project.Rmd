@@ -312,10 +312,25 @@ say that $K_1$ is irreducible if the proposal for $K_1$ can reach all of $R_{+}$
 from any starting point. Further, $K_2$ is irreducible if the the proposal for 
 $K_2$ can reach all of $R_{+}^5$ from any starting point. Lastly, $K_3$ is irreducible
 if the proposal for $K_3$ can reach all of 
-$$\{1,2,..., 313\} \times \{314, 315,..., 626\} \times \{627, 628, ..., 939\} \times \{940, 941, ..., 1255\} $$
+$$\{1,2,..., 447\} \times \{448, 315,..., 894\} \times \{895, 628, ..., 1341\} \times \{1342, 941, ..., 1788\} $$
 from any starting point. For the sigma, we use a normal distribution centered at
-the current $\sigma$:
+the current $\sigma$ as the proposal distribution:
 $$\sigma' \sim N(\sigma, 5)$$
+For $\alpha$'s we will use a multivariate normal distribution centered at the 
+current $\alpha$'s as the proposal distribution :
+
+$$\alpha' \sim N(\alpha, 0.001)$$
+Lastly, for each change point, we use a discrete uniform distribution as the proposal
+
+$$c_1' \sim Unif\{1, 447\}$$
+
+$$c_2' \sim Unif\{447, 894\}$$
+
+$$c_3' \sim Unif\{895, 1341\}$$
+$$c_4' \sim Unif\{1342, 1788\}$$
+By our choice of proposals, the MCMC can reach any point in 
+$\{1,2,..., 447\} \times \{448, 315,..., 894\} \times \{895, 628, ..., 1341\} \times \{1342, 941, ..., 1788\}$
+
 
 ```{r, include = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
@@ -506,6 +521,15 @@ hist(output$change_point_trace3[output$change_point_trace3 != -1])
 hist(output$change_point_trace4[output$change_point_trace4 != -1])
 ```
 
+The spike in the plot for the first change point indicates that the change 
+change point is around March $2023$, when COVID restriction started, which is 
+aligned with our expectations.The second change point seems to be between 
+$800$th and $900$th time indices, which corresponds to around August $2021$, 
+. Further, the third change point seem to be around $950$th or $1350$th time index, 
+which is also aligned with the plot. There seems to be three potential candidates
+for the fourth change point, the most notable one being around $1600th$ and $1700$th
+time indices, which corresponds to around October $2023$. Therefore, the fourth 
+change point is also aligned with the plot of the five year time series.
 
 
 ```{r}
