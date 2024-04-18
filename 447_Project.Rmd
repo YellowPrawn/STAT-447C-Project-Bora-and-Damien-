@@ -302,6 +302,12 @@ lines(time, sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000
 legend("topleft", legend = c("Test Data", "MCMC Model", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "purple", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "solid", "dashed"))
 ```
 
+```{r, include = FALSE}
+mean((preds.ts - x.ts.test)^2)
+```
+
+This plot suggests that the simple MCMC model with 3 years of data matches the performance of the SARIMA models. It achieves $MSPE = 8591.045$ which is significantly better than the MSPE for the SARIMA models. However, it it can be observed that the prediction interval seems to be larger. The error of the model is not improved compared to the frequentist approach.
+
 Now, we will use the five year data, and will try to find 
 the change points within the data. From the time series plot of the five year data, 
 it seems that there are multiple change point candidates, one of them being around 
@@ -547,10 +553,11 @@ mean(output$alpha3_trace[output$alpha3_trace != -1])
 mean(output$alpha4_trace[output$alpha4_trace != -1])
 mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
+
 # Model Diagnostics (Exact Invariance Test)
 To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We modify the code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
 
-We use the `arima.sim()` function to generate our synthetic data from the model found in the EDA section of this project
+We use the `arima.sim()` function to generate our synthetic data in the forward simulated using the model found in the EDA section of this project.
 
 ```{r, echo = FALSE}
 forward = function() {
