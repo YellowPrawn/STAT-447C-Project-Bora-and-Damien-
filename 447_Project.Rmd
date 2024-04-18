@@ -65,13 +65,15 @@ x.ts.test = window(x.ts.3,
 
 # Introduction
 
-Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ kernel mixtures to detect change-points for S&P 500's historic data from the previous 5 years; this encapsulates the effects of the COVID-19 pandemic where there exists a large sudden drop in the S&P 500 Index. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ kernel mixtures to detect change-points for S&P 500's historic data from the previous 5 years; this encapsulates the effects of the COVID-19 pandemic where there exists a large sudden drop in the S&P 500 Index. Further, there are impacts of the war in Ukraine on the S&P 500 index. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
+The main inspiration for our work in this project is the sentence put on the lecture slides by Prof. Alexandre Bouchard-Cote: it is easier to describe how things change rather than how things are.
 
 # Literature Review
 
-This project is heavily inspired by the STAT 443 course. The modelling and forecasting techniques used in the frequentist approach (Box-Jenkins SARIMA) are heavily inspired by the techniques and practices learned in STAT 443. As a result of this, we refer to the textbook used in STAT 443: C. Cha]ield and H. Xing 2019 for our techniques and theory. The code used to generate our results and models within the EDA and data preparation section are based off the lecture notes and various assignments provided in STAT 443. 
+This project is heavily inspired by the STAT $447$ and STAT $443$ courses. The modelling and forecasting techniques used in the frequentist approach (Box-Jenkins SARIMA) are heavily inspired by the techniques and practices learned in STAT 443. As a result of this, we refer to the textbook used in STAT 443: C. Cha]ield and H. Xing 2019 for our techniques and theory. The code used to generate our results and models within the EDA and data preparation section are based off the lecture notes and various assignments provided in STAT 443. 
 
-The idea of using SARIMA for predicting the S&P 500 can be seen in Dun 2023. As such, we believe that an ARIMA model is an appropriate modelling approach that can be used as a baseline model that we may use as a comparator for our Bayesian model. This paper is relatively recent and contains data with a similar range as ours; they conclude that an $ARIMA(0,1,1)(0,0,0)[0]$ model is ideal for modelling the S&P500. Despite their promising results with a simple $ARIMA(0,1,1)(0,0,0)[0]$ model, some of their data preprocessing techniques are not outlined, and therefore it is hard to recreate their results accordingly. Using just the training data (details outlined in the upcoming section) and the same ARIMA model as Dun's paper, we obtain an AIC of 10693.23 compared to Dun's AIC of -34978.79
+The idea of using SARIMA for predicting the S&P 500 can be seen in Dun 2023. As such, we believe that an ARIMA model is an appropriate modelling approach that can be used as a baseline model that we may use as a comparator for our Bayesian model. This paper is relatively recent and contains data with a similar range as ours; they conclude that an $ARIMA(0,1,1)(0,0,0)[0]$ model is ideal for modelling the S&P500. Despite their promising results with a simple $ARIMA(0,1,1)(0,0,0)[0]$ model, some of their data preprocessing techniques are not outlined, and therefore it is hard to recreate their results accordingly. Using just the training data (details outlined in the upcoming section) and the same ARIMA model as Dun's paper, we obtain an AIC of 10693.23 compared to Dun's AIC of -34978.79.  We think that it is possible to create a more flexible model using a Change Points Model utilizing kernel mixtures. A change point model should provide important implications on how to act in times of crisis and normality.
+
 
 ```{r}
 arima(x.ts.3.train, order=c(0,1,1))
@@ -554,7 +556,7 @@ mean(output$alpha4_trace[output$alpha4_trace != -1])
 mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
 
-<<<<<<< HEAD
+
 It seems that the standard deviation $38.56$ is less than the bayesian 
 standard devation estimate for the three year data $45.46$. Further, by using
 a change point model using kernel mixtures, we had more flexibility in terms of
@@ -566,56 +568,52 @@ regions has the smallest $\alpha$ values.
 
 
 =======
-# Model Diagnostics (Exact Invariance Test)
-To ensure our model is not prone to a computational error and our computed results are not due luck, we perform the exact invariance test in this section of the project. We modify the code used in the [STAT 447 Lecture Notes](https://ubc-stat-ml.github.io/web447/w12_mcmc2/topic08_debug.html). 
+# Model Diagnostics 
 
-We use the `arima.sim()` function to generate our synthetic data in the forward simulated using the model found in the EDA section of this project.
+We would like to make sure that the MCMC model is mixing fastly. Therefore, 
+we will create trace plots obtained by using different chains. To create the 
+second chain, we are using a different seed.
 
 ```{r, echo = FALSE}
-forward = function() {
-  x = arima.sim(n = 1, list(order = c(0, 1, 1)))
-  return(list(x = x))
-}
-
-stationary_mcmc = function(joint, n_iterations) {
-  initialization = forward()
-  y = initialization$y
-  if (n_iterations == 0) { 
-    return(initialization$x)
-  } else {
-    current_x = initialization$x
-    for (i in 1:n_iterations) {
-      proposed_x = current_x + rnorm(1) 
-      ratio = joint(proposed_x, y) / joint(current_x, y) 
-      if (runif(1) < ratio) {
-        current_x = proposed_x
-      }
-    }
-    return(current_x)
-  }
-}
-
-exact_invariance = function(joint) {
-  forward_only = replicate(1000, stationary_mcmc(joint, 0))
-  with_mcmc    = replicate(1000, stationary_mcmc(joint, 200))
-
-  ks.test(forward_only, with_mcmc)
-}
-
-#test_result = exact_invariance(mcmc)
-#test_result
+set.seed(1)
+output2 = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 1460), x.ts.5.train, 20000))
 ```
+
+
+```{r, echo = FALSE}
+plot(output$sigma_trace[output$sigma_trace != -1])
+points(seq(1,length(output2$sigma_trace[output2$sigma_trace != -1])), 
+       output2$sigma_trace[output2$sigma_trace != -1], col = "red")
+plot(output$alpha1_trace[output$alpha1_trace != -1])
+points(seq(1,length(output2$alpha1_trace[output2$alpha1_trace != -1])), 
+       output2$alpha1_trace[output2$alpha1_trace != -1], col = "red")
+plot(output$alpha2_trace[output$alpha2_trace != -1])
+points(seq(1,length(output2$alpha2_trace[output2$alpha2_trace != -1])), 
+       output2$alpha2_trace[output2$alpha2_trace != -1], col = "red")
+plot(output$alpha3_trace[output$alpha3_trace != -1])
+points(seq(1,length(output2$alpha3_trace[output2$alpha3_trace != -1])), 
+       output2$alpha3_trace[output2$alpha3_trace != -1], col = "red")
+plot(output$alpha4_trace[output$alpha4_trace != -1])
+points(seq(1,length(output2$alpha4_trace[output2$alpha4_trace != -1])), 
+       output2$alpha4_trace[output2$alpha4_trace != -1], col = "red")
+plot(output$alpha5_trace[output$alpha5_trace != -1])
+points(seq(1,length(output2$alpha5_trace[output2$alpha5_trace != -1])), 
+       output2$alpha5_trace[output2$alpha5_trace != -1], col = "red")
+
+```
+
+The MCMC model seems to be mixing well as the trace plots obtained from different 
+chains are hard to distinguish. 
 
 
 # Conclusion
 
-In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust. 
+In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust. Since it is easier to describe how things change rather than how things are, the change points model we have developed should help with future crisis in terms how much the index will deviate from its performance in normality.
 
 
 ## Limitations
 
-Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results.
->>>>>>> b484b42b9e1124bff26883acd266eba2a0c419fb
+Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results. Further, incorporating further tools for the model to use would be useful, such as recent news or events that can significantly impact values. This could be FED interest rates, new pandemic, new war. By incorporating these tools, the model could be more dynamic.
 
 # References
 
