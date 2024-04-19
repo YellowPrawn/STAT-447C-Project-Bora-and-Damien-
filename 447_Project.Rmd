@@ -614,7 +614,7 @@ print(mean((yhats.5 - x.ts.test)^2))
 ```
 
 
-From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 6859.014$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions. However, the main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
+From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 6859.014$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions. Notably, the confidence intervals for the Change Point Model are not large; this is because we did not make posterior predictions. Instead, we used the posterior estimates of the parameters to make predictions, which was done to save computation time. The main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
 
 
 ## Sensitivity analysis for change point model
@@ -747,8 +747,7 @@ chains are hard to distinguish and are uniformly distributed.
 
 # Conclusion
 
-In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust despite the fact that it obtains a slightly lower MSPE compared to the simple MCMC model. Since it is easier to describe how things change rather than how things are, the change point model we have developed should help with future crisis in terms how much the index will deviate from its performance in normality. 
-
+In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust despite the fact that it obtains a slightly lower MSPE compared to the simple MCMC model. Since it is easier to describe how things change rather than how things are, the change point model we have developed should help with future crisis in terms how much the index will deviate from its performance in normality. To make the Change Point Model even better, we could have incorporated the $\alpha$ values corresponding to other regions as well. In particular, while making predictions, we could have assigned a probability $\alpha$ values corresponding to each region. For example, smaller probabilities for times of crisis etc. Then while making predictions, we could have used the probability distribution to change the $\alpha$ value as time passes. This could result in a reasonably dynamic model for long term predictions. Yet, since we made predictions just for about a month, we didn't use the mentioned methodology to make predictions. Instead, we used the $\alpha$ value corresponding to the rightmost region. 
 
 ## Limitations
 
@@ -756,7 +755,10 @@ Our project is largely limited to the short amount of time that we are able to s
 
 Another limitation of the model is the utilization of several statistical assumptions with regard to the time series. We made the strong assumption that the time series was stationary after data preparation; however all models may benefit significantly more if we had the techniques and tools that could further assist in handling non-stationary time series. This would require additional knowledge in time series forecasting and modelling techniques.
 
+Further, while making predictions for the Change Point Model we used posterior estimates of the parameters to make predictions instead of directly having posterior predictions. The limitation that behind this was the computation cost of having posterior predictions would be much larger given the complexity of the Change Point Model. The consequence of our choice to avoid high computation cost was narrow confidence intervals for the predictions of the Change Point Model.  
+
 Finally, our data is also limited to just 3 and 5 years of the S&P 500 Index. This is primarily because we wanted to observe the difference in model performance when the impact of the COVID-19 pandemic is incorporated into the data. Under the assumption that a minimal number of events impact the S&P 500 Index, it would be interesting to see how much better the model could perform with additional post-pandemic data and crisis events exclusively.
+
 
 # References
 
