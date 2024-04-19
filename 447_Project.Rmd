@@ -66,7 +66,8 @@ x.ts.test = window(x.ts.3,
 # Introduction
 
 Throughout the duration of this outgoing academic term, we have both been undergoing STAT 443: Time Series & Forecasting. Taking both STAT 443 and STAT 447C in tandem, we have grown a keen interesting in the utilization of Bayesian techniques within time series forecasting. Namely, this project aims to compare parameter estimates and prediction performance obtained using Bayesian techniques compared to those obtained using SARIMA and Box-Jenkins. To demonstrate this, we utilize the S&P 500's historic data from the previous 3 years. We develop our Bayesian model using MH MCMC to learn model parameters for the 3 year data set. Furthermore, we employ kernel mixtures to detect change-points for S&P 500's historic data from the previous 5 years; this encapsulates the effects of the COVID-19 pandemic where there exists a large sudden drop in the S&P 500 Index. Further, there are impacts of the war in Ukraine on the S&P 500 index. By completing this project, we aim to determine the better approach to predicting economic patterns despite their chaotic nature.
-The main inspiration for our work in this project is the sentence put on the lecture slides by Prof. Alexandre Bouchard-Cote: it is easier to describe how things change rather than how things are.
+
+The main inspiration for our work in this project is the sentence put on the lecture slides by Prof. Alexandre Bouchard-Cote: "it is easier to describe how things change rather than how things are".
 
 # Literature Review
 
@@ -571,13 +572,6 @@ plot_traces_and_hist("change_point_trace3", "Change Point 3")
 plot_traces_and_hist("change_point_trace4", "Change Point 4")
 ```
 
-```{r}
-hist(output$change_point_trace1[output$change_point_trace1 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
-hist(output$change_point_trace2[output$change_point_trace2 != -1], xlab = "Time (index within time series data)", main = "Change Point 2 trace plot")
-hist(output$change_point_trace3[output$change_point_trace3 != -1], xlab = "Time (index within time series data)", main = "Change Point 3 trace plot")
-hist(output$change_point_trace4[output$change_point_trace4 != -1], xlab = "Time (index within time series data)", main = "Change Point 4 trace plot")
-```
-
 The spike in the plot for the first change point indicates that the change 
 change point is around March $2023$, when COVID restriction started, which is 
 aligned with our expectations. The second change point seems to be between 
@@ -796,6 +790,9 @@ Further, while making predictions for the Change Point Model we used posterior e
 
 Finally, our data is also limited to just 3 and 5 years of the S&P 500 Index. This is primarily because we wanted to observe the difference in model performance when the impact of the COVID-19 pandemic is incorporated into the data. Under the assumption that a minimal number of events impact the S&P 500 Index, it would be interesting to see how much better the model could perform with additional post-pandemic data and crisis events exclusively.
 
+# Contributions
+
+In this project, we split the workload into relatively even parts; Bora took charge of implementing the two MCMCs that were demonstrated, while Damien completed the data preparation, SARIMA models, and the main bodies of writing. The data analysis across the project was also distributed evenly; both of us creating visualizations for the project in general, and providing insight to the statistics behind the analyses using the tools acquired throughout STAT 447.
 
 # References
 
