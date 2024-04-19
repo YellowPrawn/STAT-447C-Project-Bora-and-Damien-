@@ -107,7 +107,7 @@ x.ts.3.stl <- stl(x.ts.3.train, s.window = "periodic")
 x.ts.3.dst <- x.ts.3.train - x.ts.3.stl$time.series[,"seasonal"] - x.ts.3.stl$time.series[,"trend"]
 
 x.ts.5.stl <- stl(x.ts.5.train, s.window = "periodic")
-x.ts.5.dst <- x.ts.5.train - x.ts.5.stl$time.series[,"seasonal"] - x.ts.3.stl$time.series[,"trend"]
+x.ts.5.dst <- x.ts.5.train - x.ts.5.stl$time.series[,"seasonal"] - x.ts.5.stl$time.series[,"trend"]
 
 plot(x.ts.3.dst, main = "Deseasonalized & detrended S&P 500 Index over 3 years")
 acf(x.ts.3.dst, lag.max = 730, main = "ACF of deseasonalized/detrended S&P 500 Index over 3 years")
