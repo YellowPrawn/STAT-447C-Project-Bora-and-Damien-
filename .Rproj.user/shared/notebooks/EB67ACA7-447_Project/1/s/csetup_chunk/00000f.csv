@@ -1,41 +1,47 @@
 "0","knitr::opts_chunk$set(echo = TRUE)"
 "0","library(tseries)"
-"2","Registered S3 method overwritten by 'quantmod':
-  method            from
-  as.zoo.data.frame zoo 
-"
-"2","
-    ‘tseries’ version: 0.10-55
-
-    ‘tseries’ is a package for time series analysis and computational finance.
-
-    See ‘library(help=""tseries"")’ for details.
-
-"
 "0","library(tidyverse)"
-"2","── [1mAttaching core tidyverse packages[22m ─────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
-[32m✔[39m [34mdplyr    [39m 1.1.3     [32m✔[39m [34mreadr    [39m 2.1.4
-[32m✔[39m [34mforcats  [39m 1.0.0     [32m✔[39m [34mstringr  [39m 1.5.0
-[32m✔[39m [34mggplot2  [39m 3.5.0     [32m✔[39m [34mtibble   [39m 3.2.1
-[32m✔[39m [34mlubridate[39m 1.9.2     [32m✔[39m [34mtidyr    [39m 1.3.0
-[32m✔[39m [34mpurrr    [39m 1.0.2     "
-"2","── [1mConflicts[22m ───────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-[31m✖[39m [34mdplyr[39m::[32mfilter()[39m masks [34mstats[39m::filter()
-[31m✖[39m [34mdplyr[39m::[32mlag()[39m    masks [34mstats[39m::lag()
-[36mℹ[39m Use the ]8;;http://conflicted.r-lib.org/conflicted package]8;; to force all conflicts to become errors"
+"0",""
 "0","# Data Preparation"
 "0","df_three <- read.table(""./data-three_years.txt"")"
 "0","df_five <- read.table(""./data-five_years.txt"")"
 "0","df_three$V1 = as.Date(df_three$V1)"
 "0","df_five$V1 = as.Date(df_five$V1)"
 "0",""
-"0","df_three <- df_three %>%"
-"0","  group_by(year = year(df_three$V1), month = month(df_three$V1)) %>%"
-"0","  summarize(monthly_index = mean(V2))"
-"2","`summarise()` has grouped output by 'year'. You can override using the `.groups` argument."
-"0","df_five <- df_five %>%"
-"0","  group_by(year = year(df_five$V1), month = month(df_five$V1)) %>%"
-"0","  summarize(monthly_index = mean(V2))"
-"2","`summarise()` has grouped output by 'year'. You can override using the `.groups` argument."
-"0","x.ts.3 = ts(df_three$monthly_index, start = c(2021, 4), freq = 12)"
-"0","x.ts.5 = ts(df_five$monthly_index, start = c(2019, 4), freq = 12)"
+"0","# fill in missing days which are not included"
+"0","ts <- seq.POSIXt(as.POSIXlt(""2021-04-08""), as.POSIXlt(""2024-04-08""), by=""day"")"
+"0","ts <- as.Date(format.POSIXct(ts,'%Y-%m-%d'))"
+"0","df <- data.frame(V1=ts)"
+"0","df_three <- full_join(df,df_three) %>%"
+"0","  fill(V2)"
+"2","Joining with `by = join_by(V1)`"
+"0","ts <- seq.POSIXt(as.POSIXlt(""2019-04-08""), as.POSIXlt(""2024-04-08""), by=""day"")"
+"0","ts <- as.Date(format.POSIXct(ts,'%Y-%m-%d'))"
+"0","df <- data.frame(V1=ts)"
+"0","df_five <- full_join(df,df_five) %>%"
+"0","  fill(V2)"
+"2","Joining with `by = join_by(V1)`"
+"0","# Converting data into time series"
+"0","x.ts.3 = ts(df_three$V2, "
+"0","            start = c(2021, as.numeric(format(as.Date(""2021-04-08""), ""%j""))), "
+"0","            freq = 365)"
+"0","x.ts.5 = ts(df_five$V2, "
+"0","            start = c(2019, as.numeric(format(as.Date(""2019-04-08""), ""%j""))), "
+"0","            freq = 365)"
+"0",""
+"0","# Obtaining training data"
+"0","x.ts.3.train = window(x.ts.3, "
+"0","                      start=c(2021, as.numeric(format(as.Date(""2021-04-08""), ""%j""))), "
+"0","                      end=c(2024, as.numeric(format(as.Date(""2024-02-29""), ""%j""))), "
+"0","                      frequency = 365)"
+"0",""
+"0","x.ts.5.train = window(x.ts.5, "
+"0","                      start=c(2019, as.numeric(format(as.Date(""2019-04-08""), ""%j""))), "
+"0","                      end=c(2024, as.numeric(format(as.Date(""2024-02-29""), ""%j""))), "
+"0","                      frequency = 365)"
+"0",""
+"0","# Obtaining testing data (Since data for 3 years is a subset of 5 years, the data that exists within the 2024/3/1 and 2024/4/8 should be the same across both datasets)"
+"0","x.ts.test = window(x.ts.3, "
+"0","                   start=c(2024, as.numeric(format(as.Date(""2024-03-01""), ""%j""))), "
+"0","                   end=c(2024, as.numeric(format(as.Date(""2024-04-08""), ""%j""))), "
+"0","                   frequency = 365)"

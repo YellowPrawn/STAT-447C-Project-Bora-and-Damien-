@@ -1,7 +1,0 @@
-"0","x.ts.3.stl <- stl(x.ts.3, s.window = ""periodic"")"
-"0","x.ts.3.ds <- x.ts.3 - x.ts.3.stl$time.series[,""seasonal""]"
-"0",""
-"0","x.ts.5.stl <- stl(x.ts.5, s.window = ""periodic"")"
-"0","x.ts.5.ds <- x.ts.5 - x.ts.5.stl$time.series[,""seasonal""]"
-"0",""
-"0","plot(x.ts.3.ds, main = ""Deseasonalized S&P 500 Index over 3 years"")"

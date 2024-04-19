@@ -1,7 +1,0 @@
-"0",""
-"0","#print(""S&P 500 Index data over 3 years"")"
-"0","#head(df_three)"
-"0","#print(""S&P 500 Index data over 5 years"")"
-"0","#head(df_five)"
-"0",""
-"0","plot(x.ts.3, ylab = ""S&P 500 Index"", main = ""S&P 500 Index over 3 years (Monthly Average)"")"
