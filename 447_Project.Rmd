@@ -739,7 +739,7 @@ plot_traces_and_hist = function(item, item_name) {
   plot(output_1, 
      col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2), 
      type = "o",
-     main = paste("Trace plot for change point kernel model", item_name),
+     main = paste("Trace plot for change point kernel model: ", item_name),
      xlab = "MCMC Iteration",
      ylab = "p")
   points(seq(1,length(output_2)), 
