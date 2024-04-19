@@ -575,7 +575,7 @@ We make predictions with the change point model as follows. We use the $\alpha$
 value corresponding to the rightmost region.
 
 ```{r, echo = FALSE}
-set.seed(123)
+set.seed(1)
 alpha5.hat = mean(output$alpha5_trace[output$alpha5_trace != -1])
 sigma.hat = mean(output$sigma_trace[output$sigma_trace != -1])
 yhats.5 = rep(-1, length(x.ts.test))
@@ -586,9 +586,11 @@ for (i in 1:length(x.ts.test)){
     yhats.5[i] = rnorm(1, alpha5.hat*yhats.5[i-1], sigma.hat)
   }
 }
+
 ```
 
 ```{r, echo = FALSE, out.width="100%", out.height="30%", fig.width=8, fig.height=6}
+cı.yhats.5 = quantile(yhats.5, c(0.025, 0.975))
 plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "Change Point Model VS Previous Models")
 
 lines(time, yhats.5, col = "green", type = 'l')
@@ -608,11 +610,11 @@ lines(time, sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000
 legend("topleft", legend = c("Test Data", "Change Point Model", "MCMC Model", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "green", "purple", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "solid", "solid", "dashed"))
 ```
 ```{r, include = FALSE}
-mean((yhats.5 - x.ts.test)^2)
+print(mean((yhats.5 - x.ts.test)^2))
 ```
 
 
-From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 8867.262$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions, but has a prediction interval that is too small to properly capture the variation within the time series. However, the main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
+From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 6859.014$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions. However, the main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
 
 
 ## Sensitivity analysis for change point model
@@ -754,7 +756,7 @@ Our project is largely limited to the short amount of time that we are able to s
 
 Another limitation of the model is the utilization of several statistical assumptions with regard to the time series. We made the strong assumption that the time series was stationary after data preparation; however all models may benefit significantly more if we had the techniques and tools that could further assist in handling non-stationary time series. This would require additional knowledge in time series forecasting and modelling techniques.
 
-Finally, our data is also limited to just 3 and 5 years of the S&P 500 Index. This is primarily because we wanted to observe the difference in model performance when the impact of the COVID-19 pandemic is incorporated into the data. Under the assumption that a minimal number of events impact the S&P 500 Index, it would be interesting to see how much better the model could perform with additional post-pandemic data exclusively.
+Finally, our data is also limited to just 3 and 5 years of the S&P 500 Index. This is primarily because we wanted to observe the difference in model performance when the impact of the COVID-19 pandemic is incorporated into the data. Under the assumption that a minimal number of events impact the S&P 500 Index, it would be interesting to see how much better the model could perform with additional post-pandemic data and crisis events exclusively.
 
 # References
 
