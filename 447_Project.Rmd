@@ -534,7 +534,44 @@ output = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 14
 ```
 
 
+```{r, include = FALSE}
+# Inspired by STAT 447 lecture notes https://github.com/UBC-Stat-ML/web447/blob/main/blocks/plot_traces_and_hist.R
+plot_traces_and_hist = function(item, item_name) {
+  layout_mat <- matrix(c(1, 2), nrow = 1, ncol = 2,
+                       byrow = TRUE)
+  layout(mat = layout_mat, 
+         heights = c(2),
+         widths = c(3, 1), respect =TRUE)
+  
+  par(mar = c(2,2,2,2))
+  
+  output <- output[[item]][output[[item]] != -1]
+  
+  plot(output, 
+     col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2), 
+     type = "o",
+     main = paste(item_name, "trace plot"),
+     xlab = "MCMC Iteration",
+     ylab = "p")
+  
+  xhist <- hist(output, plot = FALSE)
+  barplot(xhist$counts, 
+          axes = TRUE, 
+          space = 0, 
+          horiz=TRUE,
+          col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2))
+}
+```
+
+
 ```{r, echo = FALSE, out.width="50%", out.height="50%"}
+plot_traces_and_hist("change_point_trace1", "Change Point 1")
+plot_traces_and_hist("change_point_trace2", "Change Point 2")
+plot_traces_and_hist("change_point_trace3", "Change Point 3")
+plot_traces_and_hist("change_point_trace4", "Change Point 4")
+```
+
+```{r}
 hist(output$change_point_trace1[output$change_point_trace1 != -1], xlab = "Time (index within time series data)", main = "Change Point 1 trace plot")
 hist(output$change_point_trace2[output$change_point_trace2 != -1], xlab = "Time (index within time series data)", main = "Change Point 2 trace plot")
 hist(output$change_point_trace3[output$change_point_trace3 != -1], xlab = "Time (index within time series data)", main = "Change Point 3 trace plot")
@@ -677,7 +714,7 @@ mean((yhats.5.quarter - x.ts.test)^2)
 mean((yhats.5.quadruple - x.ts.test)^2)
 ```
 
-The MSPE of the models with different $sigma$ priors (11.25 and 180) are relatively close to that of the original prior choice of $\sigma = 45$. $\sigma = 11.25$ obtained $MSPE = 7293.212$ and $\sigma = 180$ obtained $MSPE = 7334.161$. Although both are lower than that of $\sigma = 45$ at $MSPE = 8867.262$, we can observe on the graph that the predictions from $\sigma = 11.25$ are quite rigid, and do not account for the variation in the time series quite as well; this is naturally expected as the chosen standard deviation is lower. Conversely, $\sigma = 180$ does not have a prediction interval that is significantly larger than that of $\sigma = 45$, but, when the point estimates in $\sigma = 180$ deviate away from the true values of the data, they seems to deviate much more than the predictions seen in $\sigma = 45$. This suggests that the prediction error for values further in-the-future would be significantly higher. Overall, the model's point estimate predictions are not very sensitive to prior changes as demonstrated here: only the prediction intervals are significantly sensitive as expected by definition.
+The MSPE of the models with different $sigma$ priors (11.25 and 180) are relatively close to that of the original prior choice of $\sigma = 45$. $\sigma = 11.25$ obtained $MSPE = 7293.212$ and $\sigma = 180$ obtained $MSPE = 7334.161$. Although both are close to that of $\sigma = 45$ at $MSPE = 6859.014$, we can observe on the graph that the predictions from $\sigma = 11.25$ are quite rigid, and do not account for the variation in the time series quite as well; this is naturally expected as the chosen standard deviation is lower. Conversely, $\sigma = 180$ does not have a prediction interval that is significantly larger than that of $\sigma = 45$, but, when the point estimates in $\sigma = 180$ deviate away from the true values of the data, they seems to deviate much more than the predictions seen in $\sigma = 45$. This suggests that the prediction error for values further in-the-future would be significantly higher. Overall, the model's point estimate predictions are not very sensitive to prior changes as demonstrated here: only the prediction intervals are significantly sensitive as expected by definition.
 
 
 # Model Diagnostics 
@@ -717,13 +754,13 @@ plot_traces_and_hist = function(item, item_name) {
        type = "o")
   
   xhist <- hist(output_1, plot = FALSE)
-  xhist <- hist(output_2, plot = FALSE)
+  xhist_2 <- hist(output_2, plot = FALSE)
   barplot(xhist$counts, 
           axes = TRUE, 
           space = 0, 
           horiz=TRUE,
           col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2))
-  barplot(xhist$counts, 
+  barplot(xhist_2$counts, 
           axes = TRUE, 
           space = 0, 
           horiz=TRUE,
