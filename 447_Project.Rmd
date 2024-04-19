@@ -763,13 +763,18 @@ plot_traces_and_hist = function(item, item_name) {
 }
 ```
 
-```{r, echo = FALSE, out.width="33%", out.height="150%"}
+```{r, echo = FALSE, out.width="20%", out.height="150%"}
 plot_traces_and_hist("sigma_trace", "sigma")
 plot_traces_and_hist("alpha1_trace", "alpha_1")
 plot_traces_and_hist("alpha2_trace", "alpha_2")
 plot_traces_and_hist("alpha3_trace", "alpha_3")
 plot_traces_and_hist("alpha4_trace", "alpha_4")
 plot_traces_and_hist("alpha5_trace", "alpha_5")
+
+plot_traces_and_hist("change_point_trace1", "Change Point 1")
+plot_traces_and_hist("change_point_trace2", "Change Point 2")
+plot_traces_and_hist("change_point_trace3", "Change Point 3")
+plot_traces_and_hist("change_point_trace4", "Change Point 4")
 ```
 
 The MCMC model seems to be mixing well as the trace plots obtained from different 
