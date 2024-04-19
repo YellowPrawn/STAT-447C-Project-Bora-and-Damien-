@@ -343,15 +343,23 @@ current $\alpha$'s as the proposal distribution :
 $$\alpha' \sim N(\alpha, 0.001)$$
 Lastly, for each change point, we use a discrete uniform distribution as the proposal
 
-$$c_1' \sim Unif\{1, 447\}$$
-
-$$c_2' \sim Unif\{447, 894\}$$
-
-$$c_3' \sim Unif\{895, 1341\}$$
-$$c_4' \sim Unif\{1342, 1788\}$$
+$c_1' \sim Unif\{1, 447\}$, ,$c_2' \sim Unif\{447, 894\}$, $c_3' \sim Unif\{895, 1341\}$,
+$c_4' \sim Unif\{1342, 1788\}$.
 By our choice of proposals, the MCMC can reach any point in 
 $\{1,2,..., 447\} \times \{448, 315,..., 894\} \times \{895, 628, ..., 1341\} \times \{1342, 941, ..., 1788\}$
 
+Let $\rho$ be the parameter we used to determine which kernel to use, we define it as :
+
+$$\rho \sim Unif\{1,3\}$$
+if $\rho = 1$, we use $K_1$, if $\rho = 2$ we use $K_2$ and if $\rho = 3$, we 
+use $K_3$. Let $\alpha = (\alpha_1, \alpha_2, \alpha_3, \alpha_4, \alpha_5)$ and
+$c = (c_1, c_2, c_3, c_4)$. In each $K_1$ we define the ratio 
+as $\frac{\gamma(\sigma', \alpha,c )}{\gamma(\sigma, \alpha,c)}$, in $K_2$ as 
+: $\frac{\gamma(\sigma, \alpha',c )}{\gamma(\sigma, \alpha,c)}$, in $K_3$ as:
+ $\frac{\gamma(\sigma, \alpha,c' )}{\gamma(\sigma, \alpha,c)}$ 
+ Then let $R^{(m)}$ be the ratio, we sample  $A^{(m)} ~ \sim Bern(\min\{1, R^{(m)}\})$ 
+ and then accept the proposal if $A = 1$, and set $X^{(m)} = \tilde{X}^{(m)}$. If 
+$A^{(m)}= 0$, we stay at the current point $X^{(m)} = X^{(m-1)}$.
 
 ```{r, include = FALSE, out.width="33%", out.height="150%"}
 set.seed(1)
@@ -397,7 +405,7 @@ log_joint = function(sigma, alphas, change_point, y) {
 }
 ```
 
-Then we specify three kernels, one for $sigma$,  $\alpha$, and change point.
+
 
 ```{r, include = FALSE}
 kernel1 = function(gamma, current_point, alphas, proposal_sd, change.p, y) {
