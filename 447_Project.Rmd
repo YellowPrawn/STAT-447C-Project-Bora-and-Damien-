@@ -172,7 +172,7 @@ sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TR
 sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
 ```
 
-```{r, echo = FALSE, out.width="100%", out.height="100%"}
+```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
 
 time <- seq.POSIXt(as.POSIXlt("2024-03-01"), as.POSIXlt("2024-04-09"), by="day")
 time <- as.Date(format.POSIXct(time,'%Y-%m-%d'))
@@ -277,7 +277,7 @@ yhats.se = apply(samples$yhat, 2, sd)
 
 We plot the predictions, actual values, and $95 \%$ confidence intervals as 
 follows :
-```{r, echo = FALSE, out.width="100%", out.height="100%"}
+```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
 preds.ts = ts(yhats, 
               start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
               end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
@@ -538,7 +538,7 @@ hist(output$change_point_trace4[output$change_point_trace4 != -1], xlab = "Time 
 
 The spike in the plot for the first change point indicates that the change 
 change point is around March $2023$, when COVID restriction started, which is 
-aligned with our expectations.The second change point seems to be between 
+aligned with our expectations. The second change point seems to be between 
 $800$th and $900$th time indices, which corresponds to around August $2021$, 
 . Further, the third change point seem to be around $950$th or $1350$th time index, 
 which is also aligned with the plot. There seems to be three potential candidates
@@ -547,7 +547,7 @@ time indices, which corresponds to around October $2023$. Therefore, the fourth
 change point is also aligned with the plot of the five year time series.
 
 
-```{r}
+```{r, include = FALSE}
 mean(output$sigma_trace[output$sigma_trace != -1])
 mean(output$alpha1_trace[output$alpha1_trace != -1])
 mean(output$alpha2_trace[output$alpha2_trace != -1])
@@ -557,10 +557,10 @@ mean(output$alpha5_trace[output$alpha5_trace != -1])
 ```
 
 
-It seems that the standard deviation $38.56$ is less than the bayesian 
-standard devation estimate for the three year data $45.46$. Further, by using
+It seems that the standard deviation $38.56$ is less than the Bayesian 
+standard deviation estimate for the three year data $45.46$. Further, by using
 a change point model using kernel mixtures, we had more flexibility in terms of
-having bayesian estimates of the $\alpha$ values for each region determined by 
+having Bayesian estimates of the $\alpha$ values for each region determined by 
 the change points. The highest $\alpha$ value was chosen for the fifth region,
 which is the one that is on the most right hand side. The first and the fourth 
 regions has the smallest $\alpha$ values.
@@ -583,62 +583,108 @@ for (i in 1:length(x.ts.test)){
 }
 ```
 
-```{r, echo = FALSE}
-plot(time, x.ts.test, ylim =  c(5050, 5300) , main = "Actual Values vs Predictions by the Change Point Model")
-lines(time, yhats.5, col = "purple")
+```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
+plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "Change Point Model VS Previous Models")
+
+lines(time, yhats.5, col = "green", type = 'l')
+lines(time, yhats.5 - qnorm(0.975) * sigma.hat, col = "green", lty = "dashed", type = 'l')
+lines(time, yhats.5 + qnorm(0.975) * sigma.hat, col = "green", lty = "dashed", type = 'l')
+
+lines(time, preds.ts, col = "purple", type = 'l')
+lines(time, preds.ts - qnorm(0.975) * preds.se.ts, col = "purple", lty = "dashed", type = 'l')
+lines(time, preds.ts + qnorm(0.975) * preds.se.ts, col = "purple", lty = "dashed", type = 'l')
+lines(time, sarima.3.preds$pred, col = "#FF0000", type = 'l')
+lines(time, sarima.3.preds$pred - qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
+lines(time, sarima.3.preds$pred + qnorm(0.975) * sarima.3.preds$se, col = "#FF0000", lty = "dashed", type = 'l')
+lines(time, sarima.5.preds$pred, col = "#0000FF", type = 'l')
+lines(time, sarima.5.preds$pred - qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed", type = 'l')
+lines(time, sarima.5.preds$pred + qnorm(0.975) * sarima.5.preds$se, col = "#0000FF", lty = "dashed", type = 'l')
+
+legend("topleft", legend = c("Test Data", "Change Point Model", "MCMC Model", "SARIMA (3 years)", "SARIMA (5 years)", "PI Bounds"), col = c("#000000", "green", "purple", "#FF0000", "#0000FF", "#000000"), lty = c("solid", "solid", "solid", "solid", "solid", "dashed"))
+```
+```{r, include = FALSE}
+mean((yhats.5 - x.ts.test)^2)
 ```
 
-Evidently, the prediction performance has improved compared to the frequentist 
-and the simple bayesian model. Further, the model has gained flexibility.
+
+From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 8867.262$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions, but has a prediction interval that is too small to properly capture the variation within the time series. However, the main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
 
 
-=======
 # Model Diagnostics 
 
-We would like to make sure that the MCMC model is mixing fastly. Therefore, 
-we will create trace plots obtained by using different chains. To create the 
-second chain, we are using a different seed.
+We would like to ensure that the MCMC model is fast mixing. Therefore, 
+we present trace plots obtained by using different chains. To create the 
+second chain, we utilize a different random seed.
 
 ```{r, echo = FALSE}
 set.seed(1)
 output2 = suppressWarnings(mcmc(log_joint, 45, c(1,1,1,1,1), c(365, 730, 1095, 1460), x.ts.5.train, 20000))
 ```
 
+```{r, include = FALSE}
+# Inspired by STAT 447 lecture notes https://github.com/UBC-Stat-ML/web447/blob/main/blocks/plot_traces_and_hist.R
+plot_traces_and_hist = function(item, item_name) {
+  layout_mat <- matrix(c(1, 2), nrow = 1, ncol = 2,
+                       byrow = TRUE)
+  layout(mat = layout_mat, 
+         heights = c(2),
+         widths = c(3, 1), respect =TRUE)
+  
+  par(mar = c(2,2,2,2))
+  
+  output_1 <- output[[item]][output[[item]] != -1]
+  output_2 <- output2[[item]][output2[[item]] != -1]
+  
+  plot(output_1, 
+     col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2), 
+     type = "o",
+     main = paste("Trace plot for change point kernel model", item_name),
+     xlab = "MCMC Iteration",
+     ylab = "p")
+  points(seq(1,length(output_2)), 
+       output_2, 
+       col = rgb(red = 1, green = 0, blue = 0, alpha = 0.2), 
+       type = "o")
+  
+  xhist <- hist(output_1, plot = FALSE)
+  xhist <- hist(output_2, plot = FALSE)
+  barplot(xhist$counts, 
+          axes = TRUE, 
+          space = 0, 
+          horiz=TRUE,
+          col = rgb(red = 0, green = 0, blue = 0, alpha = 0.2))
+  barplot(xhist$counts, 
+          axes = TRUE, 
+          space = 0, 
+          horiz=TRUE,
+          col = rgb(red = 1, green = 0, blue = 0, alpha = 0.2),
+          add = TRUE)
+}
+```
 
-```{r, echo = FALSE}
-plot(output$sigma_trace[output$sigma_trace != -1])
-points(seq(1,length(output2$sigma_trace[output2$sigma_trace != -1])), 
-       output2$sigma_trace[output2$sigma_trace != -1], col = "red")
-plot(output$alpha1_trace[output$alpha1_trace != -1])
-points(seq(1,length(output2$alpha1_trace[output2$alpha1_trace != -1])), 
-       output2$alpha1_trace[output2$alpha1_trace != -1], col = "red")
-plot(output$alpha2_trace[output$alpha2_trace != -1])
-points(seq(1,length(output2$alpha2_trace[output2$alpha2_trace != -1])), 
-       output2$alpha2_trace[output2$alpha2_trace != -1], col = "red")
-plot(output$alpha3_trace[output$alpha3_trace != -1])
-points(seq(1,length(output2$alpha3_trace[output2$alpha3_trace != -1])), 
-       output2$alpha3_trace[output2$alpha3_trace != -1], col = "red")
-plot(output$alpha4_trace[output$alpha4_trace != -1])
-points(seq(1,length(output2$alpha4_trace[output2$alpha4_trace != -1])), 
-       output2$alpha4_trace[output2$alpha4_trace != -1], col = "red")
-plot(output$alpha5_trace[output$alpha5_trace != -1])
-points(seq(1,length(output2$alpha5_trace[output2$alpha5_trace != -1])), 
-       output2$alpha5_trace[output2$alpha5_trace != -1], col = "red")
-
+```{r, echo = FALSE, out.width="33%", out.height="150%"}
+plot_traces_and_hist("sigma_trace", "sigma")
+plot_traces_and_hist("alpha1_trace", "alpha_1")
+plot_traces_and_hist("alpha2_trace", "alpha_2")
+plot_traces_and_hist("alpha3_trace", "alpha_3")
+plot_traces_and_hist("alpha4_trace", "alpha_4")
+plot_traces_and_hist("alpha5_trace", "alpha_5")
 ```
 
 The MCMC model seems to be mixing well as the trace plots obtained from different 
-chains are hard to distinguish. 
+chains are hard to distinguish and are uniformly distributed. 
 
 
 # Conclusion
 
-In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust. Since it is easier to describe how things change rather than how things are, the change points model we have developed should help with future crisis in terms how much the index will deviate from its performance in normality.
+In conclusion, both the Frequentist and the Bayesian approaches we have taken to modelling and forecasting the S&P 500 Index achieve a similar level of performance. However, when Kernel Mixtures are implemented into the MCMC algorithm, we are more likely to be able to handle sudden changes and fluctuations in the time series; in other words, the model which incorporates Kernel Mixtures is significantly more robust despite the fact that it obtains a slightly lower MSPE compared to the simple MCMC model. Since it is easier to describe how things change rather than how things are, the change point model we have developed should help with future crisis in terms how much the index will deviate from its performance in normality. 
 
 
 ## Limitations
 
-Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results. Further, incorporating further tools for the model to use would be useful, such as recent news or events that can significantly impact values. This could be FED interest rates, new pandemic, new war. By incorporating these tools, the model could be more dynamic.
+Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results. Further, incorporating further tools for the model to use would be useful, such as recent news or events that can significantly impact values including, but not limited to FED interest rates, new pandemics, unforeseen global events, and more. By incorporating these tools and information, the model could be more dynamic and flexible to sudden changes.
+
+Another limitation of the model is the utilization of several statistical assumptions with regard to the time series. We made the strong assumption that the time series was stationary after data preparation; however all models may benefit significantly more if we had the techniques and tools that could further assist in handling non-stationary 
 
 # References
 
