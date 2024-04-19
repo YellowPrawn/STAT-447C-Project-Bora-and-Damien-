@@ -172,7 +172,7 @@ sarima.3.preds <- predict(sarima.model.3, n.ahead = 39, prediction.interval = TR
 sarima.5.preds <- predict(sarima.model.5, n.ahead = 39, prediction.interval = TRUE)
 ```
 
-```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
+```{r, echo = FALSE, out.width="100%", out.height="30%", fig.width=8, fig.height=6}
 
 time <- seq.POSIXt(as.POSIXlt("2024-03-01"), as.POSIXlt("2024-04-09"), by="day")
 time <- as.Date(format.POSIXct(time,'%Y-%m-%d'))
@@ -199,9 +199,12 @@ To compare the SARIMA model's performance with the bayesian approach our project
 
 
 # Model Development
+
+## MCMC Model
+
 We start by constructing a Bayesian model for the three year data, then we will
 make the model more complex. ACF and PACF analysis of the data showed that an 
-$AR(1)$ process is suitable. Therefore, we incorporate this knowledge into our 
+$AR(1)$ process is suitable for the data too. Therefore, we incorporate this knowledge into our 
 Bayesian model. Let $i$ be the time index and $y$ be the deseasonalized time 
 series. 
 
@@ -277,7 +280,7 @@ yhats.se = apply(samples$yhat, 2, sd)
 
 We plot the predictions, actual values, and $95 \%$ confidence intervals as 
 follows :
-```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
+```{r, echo = FALSE, out.width="100%", out.height="30%", fig.width=8, fig.height=6}
 preds.ts = ts(yhats, 
               start=c(2024, as.numeric(format(as.Date("2024-03-01"), "%j"))), 
               end=c(2024, as.numeric(format(as.Date("2024-04-08"), "%j"))), 
@@ -309,6 +312,8 @@ mean((preds.ts - x.ts.test)^2)
 ```
 
 This plot suggests that the simple MCMC model with 3 years of data matches the performance of the SARIMA models. It achieves $MSPE = 8591.045$ which is significantly better than the MSPE for the SARIMA models. However, it it can be observed that the prediction interval seems to be larger. The error of the model is not improved compared to the frequentist approach.
+
+## Change point model implementation
 
 Now, we will use the five year data, and will try to find 
 the change points within the data. From the time series plot of the five year data, 
@@ -583,7 +588,7 @@ for (i in 1:length(x.ts.test)){
 }
 ```
 
-```{r, echo = FALSE, out.width="100%", out.height="75%", fig.width=8, fig.height=8}
+```{r, echo = FALSE, out.width="100%", out.height="30%", fig.width=8, fig.height=6}
 plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "Change Point Model VS Previous Models")
 
 lines(time, yhats.5, col = "green", type = 'l')
@@ -608,6 +613,69 @@ mean((yhats.5 - x.ts.test)^2)
 
 
 From the results shown in the above, the prediction interval of the change point model does not always capture the true values in the test data, however the model is able to obtain $MSPE = 8867.262$ compared to the previous MCMC model without the change point kernel which obtained $MSPE = 8591.045$. The difference in $MSPE$ within the MCMC models is much smaller compared to the difference in $MSPE$ between the MCMC models and the SARIMA models. This implies that the change point model is capable of obtaining good predictions, but has a prediction interval that is too small to properly capture the variation within the time series. However, the main benefit of the change point kernel is its flexibility and ability to deal with sudden changes in the time series; it can be assumed that this model performs better in cases such as COVID-19 or the 2008 economic crisis compared to the simple MCMC model.
+
+
+## Sensitivity analysis for change point model
+
+To demonstrate our that our prior choice was appropriate, we choose different sets of priors for and compute their posteriors. Namely, we change the value of the $\sigma$ prior to a quarter of its original value ($45 / 4 = 11.25$) in addition to four times its original value ($45 \cdot 4 = 180$). We keep the remaining prior choices constant, in order to properly evaluate the sensitivity of the $\sigma$ parameter. In the interest of computational power and complexity, we do not perform a grid search or further exploration on the remaining prior choices as each model requires several minutes to run. This sensitivity analysis simply demonstrates the importance of the $sigma$ prior
+
+```{r, include = FALSE}
+set.seed(12)
+output.quarter = suppressWarnings(mcmc(log_joint, 11.25, c(1,1,1,1,1), c(365, 730, 1095, 1460), x.ts.5.train, 20000))
+
+alpha5.hat.quarter = mean(output.quarter$alpha5_trace[output.quarter$alpha5_trace != -1])
+sigma.hat.quarter = mean(output.quarter$sigma_trace[output.quarter$sigma_trace != -1])
+yhats.5.quarter = rep(-1, length(x.ts.test))
+for (i in 1:length(x.ts.test)){
+  if(i == 1){
+     yhats.5.quarter[i] = rnorm(1, alpha5.hat.quarter*x.ts.5.train[length(x.ts.5.train)], sigma.hat.quarter)
+  } else{
+    yhats.5.quarter[i] = rnorm(1, alpha5.hat.quarter*yhats.5.quarter[i-1], sigma.hat.quarter)
+  }
+}
+```
+
+```{r, include = FALSE}
+set.seed(12)
+output.quadruple = suppressWarnings(mcmc(log_joint, 180, c(1,1,1,1,1), c(365, 730, 1095, 1460), x.ts.5.train, 20000))
+
+alpha5.hat.quadruple = mean(output.quadruple$alpha5_trace[output.quadruple$alpha5_trace != -1])
+sigma.hat.quadruple = mean(output.quadruple$sigma_trace[output.quadruple$sigma_trace != -1])
+yhats.5.quadruple = rep(-1, length(x.ts.test))
+for (i in 1:length(x.ts.test)){
+  if(i == 1){
+     yhats.5.quadruple[i] = rnorm(1, alpha5.hat.quadruple*x.ts.5.train[length(x.ts.5.train)], sigma.hat.quadruple)
+  } else{
+    yhats.5.quadruple[i] = rnorm(1, alpha5.hat.quadruple*yhats.5.quadruple[i-1], sigma.hat.quadruple)
+  }
+}
+```
+
+```{r, echo = FALSE, out.width="100%", out.height="30%", fig.width=8, fig.height=6}
+plot(time, x.ts.test, ylab = "S&P 500 Index", col = "#000000", ylim = c(4000, 6000), type = 'l', main = "Change Point Model with different prior sigmas")
+
+lines(time, yhats.5, col = "green", type = 'l')
+lines(time, yhats.5 - qnorm(0.975) * sigma.hat, col = "green", lty = "dashed", type = 'l')
+lines(time, yhats.5 + qnorm(0.975) * sigma.hat, col = "green", lty = "dashed", type = 'l')
+
+lines(time, yhats.5.quarter, col = "orange", type = 'l')
+lines(time, yhats.5.quarter - qnorm(0.975) * sigma.hat.quarter, col = "orange", lty = "dashed", type = 'l')
+lines(time, yhats.5.quarter + qnorm(0.975) * sigma.hat.quarter, col = "orange", lty = "dashed", type = 'l')
+
+lines(time, yhats.5.quadruple, col = "brown", type = 'l')
+lines(time, yhats.5.quadruple - qnorm(0.975) * sigma.hat.quadruple, col = "brown", lty = "dashed", type = 'l')
+lines(time, yhats.5.quadruple + qnorm(0.975) * sigma.hat.quadruple, col = "brown", lty = "dashed", type = 'l')
+
+legend("topleft", legend = c("Test Data", "sigma = 45 (Original)", "sigma = 11.25", "sigma = 180", "PI Bounds"), col = c("#000000", "green", "orange", "brown", "#000000"), lty = c("solid", "solid", "solid", "solid", "dashed"))
+```
+
+
+```{r, include = FALSE}
+mean((yhats.5.quarter - x.ts.test)^2)
+mean((yhats.5.quadruple - x.ts.test)^2)
+```
+
+The MSPE of the models with different $sigma$ priors (11.25 and 180) are relatively close to that of the original prior choice of $\sigma = 45$. $\sigma = 11.25$ obtained $MSPE = 7293.212$ and $\sigma = 180$ obtained $MSPE = 7334.161$. Although both are lower than that of $\sigma = 45$ at $MSPE = 8867.262$, we can observe on the graph that the predictions from $\sigma = 11.25$ are quite rigid, and do not account for the variation in the time series quite as well; this is naturally expected as the chosen standard deviation is lower. Conversely, $\sigma = 180$ does not have a prediction interval that is significantly larger than that of $\sigma = 45$, but, when the point estimates in $\sigma = 180$ deviate away from the true values of the data, they seems to deviate much more than the predictions seen in $\sigma = 45$. This suggests that the prediction error for values further in-the-future would be significantly higher. Overall, the model's point estimate predictions are not very sensitive to prior changes as demonstrated here: only the prediction intervals are significantly sensitive as expected by definition.
 
 
 # Model Diagnostics 
@@ -684,7 +752,9 @@ In conclusion, both the Frequentist and the Bayesian approaches we have taken to
 
 Our project is largely limited to the short amount of time that we are able to spend developing these models and lack of available computation resources at our disposal. With enough hyperparameter tuning, we expect that our models would be capable of performing much better and providing more accurate results. Further, incorporating further tools for the model to use would be useful, such as recent news or events that can significantly impact values including, but not limited to FED interest rates, new pandemics, unforeseen global events, and more. By incorporating these tools and information, the model could be more dynamic and flexible to sudden changes.
 
-Another limitation of the model is the utilization of several statistical assumptions with regard to the time series. We made the strong assumption that the time series was stationary after data preparation; however all models may benefit significantly more if we had the techniques and tools that could further assist in handling non-stationary 
+Another limitation of the model is the utilization of several statistical assumptions with regard to the time series. We made the strong assumption that the time series was stationary after data preparation; however all models may benefit significantly more if we had the techniques and tools that could further assist in handling non-stationary time series. This would require additional knowledge in time series forecasting and modelling techniques.
+
+Finally, our data is also limited to just 3 and 5 years of the S&P 500 Index. This is primarily because we wanted to observe the difference in model performance when the impact of the COVID-19 pandemic is incorporated into the data. Under the assumption that a minimal number of events impact the S&P 500 Index, it would be interesting to see how much better the model could perform with additional post-pandemic data exclusively.
 
 # References
 
